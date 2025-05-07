@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+import json
+import sys
+
+import anthropic
+
+from tools.delete_file_tool import DeleteFileDefinition
+from tools.edit_file_tool import EditFileDefinition
+from tools.list_files_tool import ListFilesDefinition
+from tools.read_file_tool import ReadFileDefinition
+from tools.git_command_tool import GitCommandDefinition
+
+
+class Agent:
+    def __init__(self, client, get_user_message, tools):
+        self.client = client
+        self.get_user_message = get_user_message
+        self.tools = tools
+
+    def run(self):
+        conversation = []
+        print("Chat with Claude (use 'ctrl+c' to exit)")
+        read_user_input = True
+
+        while True:
+            if read_user_input:
+                # prompt for user
+                try:
+                    print(f"\033[94mYou\033[0m: ", end="", flush=True)
+                    user_input, ok = self.get_user_message()
+                except KeyboardInterrupt:
+                    sys.exit(0)
+                if not ok:
+                    break
+                conversation.append({"role": "user", "content": user_input})
+
+            response = self.run_inference(conversation)
+            tool_results = []
+
+            # print assistant text and collect any tool calls
+            for block in response.content:
+                if block.type == "text":
+                    print(f"\033[93mClaude\033[0m: {block.text}")
+                elif block.type == "tool_use":
+                    result = self.execute_tool(block.id, block.name, block.input)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result
+                    })
+
+            # 2) First, append the assistant’s own message (including its tool_use blocks!)
+            conversation.append({
+                "role": "assistant",
+                "content": [
+                    # for each block Claude returned, mirror it exactly
+                    {
+                        "type": b.type,
+                        **({
+                               "text": b.text
+                           } if b.type == "text" else {
+                            "id": b.id,
+                            "name": b.name,
+                            "input": b.input
+                        })
+                    }
+                    for b in response.content
+                ]
+            })
+
+            # 3) If there were any tool calls, follow up with your tool_results as a user turn
+            if tool_results:
+                conversation.append({
+                    "role": "user",
+                    "content": tool_results
+                })
+                read_user_input = False
+            else:
+                read_user_input = True
+
+    def run_inference(self, conversation):
+        tools_param = []
+        for t in self.tools:
+            tools_param.append({
+                "name": t.name,
+                "description": t.description,
+                "input_schema": t.input_schema
+            })
+
+        return self.client.messages.create(
+            model="claude-3-7-sonnet-20250219",
+            max_tokens=1024,
+            messages=conversation,
+            tool_choice={"type": "auto"},
+            tools=tools_param
+        )
+
+    def execute_tool(self, id, name, input_data):
+        tool_def = next((t for t in self.tools if t.name == name), None)
+        if not tool_def:
+            return "tool not found"
+        print(f"\033[92mtool\033[0m: {name}({json.dumps(input_data)})")
+        try:
+            return tool_def.function(input_data)
+        except Exception as e:
+            return str(e)
+
+
+def get_user_message():
+    try:
+        text = input()
+        return text, True
+    except EOFError:
+        return "", False
+
+
+def main():
+    client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
+    tools = [
+        ReadFileDefinition,
+        ListFilesDefinition,
+        EditFileDefinition,
+        DeleteFileDefinition,
+        GitCommandDefinition
+    ]
+    agent = Agent(client, get_user_message, tools)
+    agent.run()
+
+
+if __name__ == "__main__":
+    main()
