@@ -2,13 +2,13 @@
 
 import json
 import os
-import sys
 import pickle
-from datetime import datetime
+import sys
+
 from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
-# Input‐schema for the restart_program tool
+# Input schema for the restart_program tool
 # ------------------------------------------------------------------
 RestartProgramInputSchema = {
     "type": "object",
@@ -35,46 +35,43 @@ def restart_program(input_data: dict) -> str:
         input_data = json.loads(input_data)
 
     reason = input_data.get("reason", "Reloading tools")
-    save_file = input_data.get("save_file", "conversation_context.pkl")
-    
+
+    result = {
+        "message": f"Program will restart.",
+        "reason": reason,
+        "restart": True
+    }
+    return json.dumps(result)
+
+
+def load_conversation_context(save_file: str = "conversation_context.pkl"):
+    """
+    Call this once at your program’s entrypoint to restore a prior session.
+    """
+    if os.path.exists(save_file):
+        with open(save_file, "rb") as f:
+            context = pickle.load(f)
+        return context
+    return None
+
+
+def save_conversation(conversation, save_file: str):
+    """Save the conversation context to a file"""
     try:
-        # Get the global context object where conversation history is stored
-        # The exact implementation depends on how your agent stores conversation history
-        # This is a placeholder - replace with actual context access in your implementation
-        from base_agent import get_conversation_context
-        context = get_conversation_context()
-        
-        # Save conversation context to file
         with open(save_file, 'wb') as f:
-            pickle.dump(context, f)
-        
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        result = {
-            "success": True,
-            "message": f"Program will restart. Conversation saved to {save_file} at {timestamp}",
-            "reason": reason
-        }
-        
-        # This will force the program to exit and then your process manager
-        # (e.g., systemd, supervisor, or a shell script) should restart it
-        # You could also implement direct restart logic here depending on your setup
-        
-        # Schedule restart after returning result
-        # We use os._exit instead of sys.exit to ensure immediate termination
-        def restart_after_response():
-            os._exit(42)  # Use a special exit code to signal intentional restart
-            
-        # Set up a timer to restart after a short delay
-        import threading
-        threading.Timer(1.0, restart_after_response).start()
-        
-        return json.dumps(result)
+            pickle.dump(conversation, f)
+        return True
     except Exception as e:
-        result = {
-            "success": False,
-            "error": str(e)
-        }
-        return json.dumps(result)
+        print(f"Error saving conversation: {str(e)}")
+        return False
+
+
+def save_conv_and_restart(conversation, save_file: str = "conversation_context.pkl"):
+    save_conversation(conversation, save_file)
+
+    # re-exec in-place:
+    python = sys.executable
+    os.execv(python, [python] + sys.argv)
 
 
 # ------------------------------------------------------------------
@@ -82,7 +79,10 @@ def restart_program(input_data: dict) -> str:
 # ------------------------------------------------------------------
 RestartProgramDefinition = ToolDefinition(
     name="restart_program",
-    description="Restart the Python program while preserving the conversation context by saving it to a file and reloading on startup",
+    description=(
+        "Restart the Python program while preserving the conversation context "
+        "by saving it to a file and reloading on startup"
+    ),
     input_schema=RestartProgramInputSchema,
     function=restart_program
 )

@@ -1,38 +1,39 @@
 #!/usr/bin/env python3
 import json
-import sys
 import os
 import pickle
+import sys
 
 import anthropic
 
 from tools.delete_file_tool import DeleteFileDefinition
 from tools.edit_file_tool import EditFileDefinition
+from tools.git_command_tool import GitCommandDefinition
 from tools.list_files_tool import ListFilesDefinition
 from tools.read_file_tool import ReadFileDefinition
-from tools.git_command_tool import GitCommandDefinition
-from tools.restart_program_tool import RestartProgramDefinition
-
+from tools.restart_program_tool import RestartProgramDefinition, save_conv_and_restart
 
 # Global conversation context
 _CONVERSATION_CONTEXT = None
+
 
 def get_conversation_context():
     """Function to access the global conversation context"""
     global _CONVERSATION_CONTEXT
     return _CONVERSATION_CONTEXT
 
+
 def set_conversation_context(context):
     """Function to set the global conversation context"""
     global _CONVERSATION_CONTEXT
     _CONVERSATION_CONTEXT = context
+
 
 class Agent:
     def __init__(self, client, get_user_message, tools):
         self.client = client
         self.get_user_message = get_user_message
         self.tools = tools
-        self.conversation_file = "conversation_context.pkl"
 
     def run(self):
         # Try to load saved conversation context
@@ -41,10 +42,10 @@ class Agent:
             print("Restored previous conversation context")
         else:
             conversation = []
-            
+
         # Set the global conversation context reference
         set_conversation_context(conversation)
-        
+
         print("Chat with Claude (use 'ctrl+c' to exit)")
         read_user_input = True
 
@@ -101,6 +102,17 @@ class Agent:
                     "content": tool_results
                 })
                 read_user_input = False
+                # detect “please restart” signals
+                for tr in tool_results:
+                    # each tr is { type: "tool_result", tool_use_id, content }
+                    # content is the JSON string the tool returned
+                    try:
+                        payload: dict = json.loads(tr["content"])
+                        if payload.get("restart"):
+                            # now the conversation list has everything (user msg, assistant blocks, tool_results)
+                            save_conv_and_restart(conversation)
+                    except json.JSONDecodeError:
+                        pass
             else:
                 read_user_input = True
 
@@ -130,22 +142,13 @@ class Agent:
             return tool_def.function(input_data)
         except Exception as e:
             return str(e)
-            
-    def save_conversation(self, conversation):
-        """Save the conversation context to a file"""
-        try:
-            with open(self.conversation_file, 'wb') as f:
-                pickle.dump(conversation, f)
-            return True
-        except Exception as e:
-            print(f"Error saving conversation: {str(e)}")
-            return False
-            
-    def load_conversation(self):
+
+    @staticmethod
+    def load_conversation(save_file="conversation_context.pkl"):
         """Load conversation context from a file if it exists"""
-        if os.path.exists(self.conversation_file):
+        if os.path.exists(save_file):
             try:
-                with open(self.conversation_file, 'rb') as f:
+                with open(save_file, 'rb') as f:
                     return pickle.load(f)
             except Exception as e:
                 print(f"Error loading conversation: {str(e)}")
@@ -171,18 +174,7 @@ def main():
         RestartProgramDefinition
     ]
     agent = Agent(client, get_user_message, tools)
-    
-    # Check if we were restarted with a special exit code
-    if len(sys.argv) > 1 and sys.argv[1] == "--restarted":
-        print("Program has been restarted, restoring conversation context...")
-    
-    try:
-        agent.run()
-    except SystemExit as e:
-        # Save conversation context before exiting if it's our special restart code
-        if e.code == 42:
-            print("Restarting program...")
-        raise
+    agent.run()
 
 
 if __name__ == "__main__":
