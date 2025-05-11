@@ -102,17 +102,33 @@ class Agent:
                     "content": tool_results
                 })
                 read_user_input = False
+
                 # detect “please restart” signals
                 for tr in tool_results:
-                    # each tr is { type: "tool_result", tool_use_id, content }
-                    # content is the JSON string the tool returned
-                    try:
-                        payload: dict = json.loads(tr["content"])
-                        if payload.get("restart"):
-                            # now the conversation list has everything (user msg, assistant blocks, tool_results)
-                            save_conv_and_restart(conversation)
-                    except json.JSONDecodeError:
-                        pass
+                    content = tr.get("content")
+                    payload = None
+
+                    # if it's already a dict, use it directly
+                    if isinstance(content, dict):
+                        payload = content
+                    # if it's a string, try parsing JSON
+                    elif isinstance(content, str):
+                        try:
+                            payload = json.loads(content)
+                            if not isinstance(payload, dict):
+                                # not a dict, skip
+                                payload = None
+                                continue
+                        except (json.JSONDecodeError, TypeError):
+                            # not JSON, skip
+                            continue
+                    # otherwise skip non‐dict, non‐str
+                    else:
+                        continue
+
+                    # if tool asked for restart, save+restart
+                    if payload is not None and payload.get("restart"):
+                        save_conv_and_restart(conversation)
             else:
                 read_user_input = True
 
