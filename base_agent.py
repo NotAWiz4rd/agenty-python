@@ -11,8 +11,8 @@ from tools.edit_file_tool import EditFileDefinition
 from tools.git_command_tool import GitCommandDefinition
 from tools.list_files_tool import ListFilesDefinition
 from tools.read_file_tool import ReadFileDefinition
-from tools.restart_program_tool import RestartProgramDefinition, save_conv_and_restart
 from tools.reset_context_tool import ResetContextDefinition
+from tools.restart_program_tool import RestartProgramDefinition, save_conv_and_restart
 
 # Global conversation context
 _CONVERSATION_CONTEXT = None
@@ -39,8 +39,35 @@ class Agent:
     def run(self):
         # Try to load saved conversation context
         conversation = self.load_conversation()
+
+        # Check if this is a restart initiated by the agent
+        agent_initiated_restart = False
         if conversation:
             print("Restored previous conversation context")
+            # Check if the last tool result indicates an agent-initiated restart
+            for i in range(len(conversation) - 1, -1, -1):
+                msg = conversation[i]
+                if msg["role"] == "user" and "content" in msg and isinstance(msg["content"], list):
+                    for item in msg["content"]:
+                        if item.get("type") == "tool_result" and isinstance(item.get("content"), str):
+                            try:
+                                tool_result = json.loads(item["content"])
+                                if isinstance(tool_result, dict) and tool_result.get("restart") and tool_result.get(
+                                        "agent_initiated"):
+                                    agent_initiated_restart = True
+                                    print("Continuing execution after agent-initiated restart")
+                                    break
+                            except (json.JSONDecodeError, TypeError):
+                                pass
+                if agent_initiated_restart:
+                    break
+
+            # If we're continuing after a restart, add a system message to inform the agent
+            if agent_initiated_restart:
+                conversation.append({
+                    "role": "user",
+                    "content": "The program has restarted and is continuing execution automatically. Please continue from where you left off."
+                })
         else:
             conversation = []
 
@@ -48,7 +75,7 @@ class Agent:
         set_conversation_context(conversation)
 
         print("Chat with Claude (use 'ctrl+c' to exit)")
-        read_user_input = True
+        read_user_input = not agent_initiated_restart
 
         while True:
             if read_user_input:
@@ -57,6 +84,8 @@ class Agent:
                     print(f"\033[94mYou\033[0m: ", end="", flush=True)
                     user_input, ok = self.get_user_message()
                 except KeyboardInterrupt:
+                    # Let the atexit handler take care of deleting the context file
+                    print("\nExiting program.")
                     sys.exit(0)
                 if not ok:
                     break
@@ -132,6 +161,8 @@ class Agent:
                         # Check if this is a reset_context request (don't save context)
                         if payload.get("reset_context"):
                             # Just restart without saving
+                            # Set a flag to indicate we're intentionally restarting
+                            sys.is_restarting = True
                             python = sys.executable
                             os.execv(python, [python] + sys.argv)
                         else:
@@ -187,6 +218,21 @@ def get_user_message():
         return "", False
 
 
+def cleanup_context():
+    """Delete the conversation context file"""
+    # Skip cleanup if we're restarting the program intentionally
+    if getattr(sys, "is_restarting", False):
+        return
+
+    context_file = "conversation_context.pkl"
+    if os.path.exists(context_file):
+        try:
+            os.remove(context_file)
+            print(f"\nContext file '{context_file}' deleted.")
+        except Exception as e:
+            print(f"\nError deleting context file: {str(e)}")
+
+
 def main():
     client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
     tools = [
@@ -196,9 +242,14 @@ def main():
         DeleteFileDefinition,
         GitCommandDefinition,
         RestartProgramDefinition,
-        ResetContextDefinition
+        ResetContextDefinition,
     ]
     agent = Agent(client, get_user_message, tools)
+
+    # Register cleanup function to run on exit
+    import atexit
+    atexit.register(cleanup_context)
+
     agent.run()
 
 

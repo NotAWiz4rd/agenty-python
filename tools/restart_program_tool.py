@@ -39,7 +39,8 @@ def restart_program(input_data: dict) -> str:
     result = {
         "message": f"Program will restart.",
         "reason": reason,
-        "restart": True
+        "restart": True,
+        "agent_initiated": True  # Flag to indicate this restart was initiated by the agent
     }
     return json.dumps(result)
 
@@ -69,6 +70,9 @@ def save_conversation(conversation, save_file: str):
 def save_conv_and_restart(conversation, save_file: str = "conversation_context.pkl"):
     save_conversation(conversation, save_file)
 
+    # Set a flag to indicate we're intentionally restarting
+    sys.is_restarting = True
+    
     # re-exec in-place:
     python = sys.executable
     os.execv(python, [python] + sys.argv)
