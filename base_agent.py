@@ -35,6 +35,8 @@ class Agent:
         self.client = client
         self.get_user_message = get_user_message
         self.tools = tools
+        self.consecutive_tool_count = 0
+        self.max_consecutive_tools = 7
 
     def run(self):
         # Try to load saved conversation context
@@ -211,6 +213,9 @@ class Agent:
 
 
 def get_user_message():
+    """Get user message from standard input.
+    Returns a tuple of (message, success_flag)
+    """
     try:
         text = input()
         return text, True
@@ -221,7 +226,10 @@ def get_user_message():
 def cleanup_context():
     """Delete the conversation context file"""
     # Skip cleanup if we're restarting the program intentionally
-    if getattr(sys, "is_restarting", False):
+    # or if we're exiting due to an error
+    if getattr(sys, "is_restarting", False) or getattr(sys, "is_error_exit", False):
+        if getattr(sys, "is_error_exit", False):
+            print("Context preserved due to error exit.")
         return
 
     context_file = "conversation_context.pkl"
@@ -231,6 +239,19 @@ def cleanup_context():
             print(f"\nContext file '{context_file}' deleted.")
         except Exception as e:
             print(f"\nError deleting context file: {str(e)}")
+            log_error(f"Error deleting context file: {str(e)}")
+
+
+def log_error(error_message):
+    """Log error message to error.txt file"""
+    try:
+        with open("error.txt", "a") as f:
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"\n[{timestamp}] ERROR: {error_message}\n")
+        print(f"Error logged to error.txt")
+    except Exception as e:
+        print(f"Failed to log error to file: {str(e)}")
 
 
 def main():
@@ -250,7 +271,20 @@ def main():
     import atexit
     atexit.register(cleanup_context)
 
-    agent.run()
+    try:
+        agent.run()
+    except Exception as e:
+        error_message = f"Unhandled exception: {str(e)}"
+        log_error(error_message)
+        import traceback
+        error_details = traceback.format_exc()
+        log_error(error_details)
+        print(f"\nAn error occurred: {str(e)}")
+        print("The error has been logged to error.txt")
+        print("Your conversation context has been preserved.")
+        # Set flag to prevent context deletion
+        sys.is_error_exit = True
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -63,7 +63,15 @@ def save_conversation(conversation, save_file: str):
             pickle.dump(conversation, f)
         return True
     except Exception as e:
-        print(f"Error saving conversation: {str(e)}")
+        error_message = f"Error saving conversation: {str(e)}"
+        print(error_message)
+        try:
+            with open("error.txt", "a") as f:
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                f.write(f"\n[{timestamp}] ERROR: {error_message}\n")
+        except Exception:
+            pass  # Silently fail if we can't log to error.txt
         return False
 
 
