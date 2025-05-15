@@ -12,6 +12,7 @@ from tools.git_command_tool import GitCommandDefinition
 from tools.list_files_tool import ListFilesDefinition
 from tools.read_file_tool import ReadFileDefinition
 from tools.restart_program_tool import RestartProgramDefinition, save_conv_and_restart
+from tools.reset_context_tool import ResetContextDefinition
 
 # Global conversation context
 _CONVERSATION_CONTEXT = None
@@ -126,9 +127,16 @@ class Agent:
                     else:
                         continue
 
-                    # if tool asked for restart, save+restart
+                    # if tool asked for restart
                     if payload is not None and payload.get("restart"):
-                        save_conv_and_restart(conversation)
+                        # Check if this is a reset_context request (don't save context)
+                        if payload.get("reset_context"):
+                            # Just restart without saving
+                            python = sys.executable
+                            os.execv(python, [python] + sys.argv)
+                        else:
+                            # Normal restart - save and restart
+                            save_conv_and_restart(conversation)
             else:
                 read_user_input = True
 
@@ -187,7 +195,8 @@ def main():
         EditFileDefinition,
         DeleteFileDefinition,
         GitCommandDefinition,
-        RestartProgramDefinition
+        RestartProgramDefinition,
+        ResetContextDefinition
     ]
     agent = Agent(client, get_user_message, tools)
     agent.run()
