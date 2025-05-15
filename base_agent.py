@@ -210,7 +210,7 @@ class Agent:
 
         return self.client.messages.create(
             model="claude-3-7-sonnet-20250219",
-            max_tokens=1024,
+            max_tokens=4000,
             messages=conversation,
             tool_choice=tool_choice,
             tools=tools_param
