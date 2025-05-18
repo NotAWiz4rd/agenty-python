@@ -7,6 +7,7 @@ import sys
 import anthropic
 
 from tools.ask_human_tool import AskHumanDefinition
+from tools.calculator_tool import CalculatorDefinition
 from tools.delete_file_tool import DeleteFileDefinition
 from tools.edit_file_tool import EditFileDefinition
 from tools.git_command_tool import GitCommandDefinition
@@ -39,7 +40,7 @@ class Agent:
         # Initialize counter for tracking consecutive tool calls without human interaction
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
-        self.max_consecutive_tools = 7
+        self.max_consecutive_tools = 10
 
     def run(self):
         # Try to load saved conversation context
@@ -291,6 +292,7 @@ def main():
         RestartProgramDefinition,
         ResetContextDefinition,
         AskHumanDefinition,
+        CalculatorDefinition,
     ]
     agent = Agent(client, get_user_message, tools)
 
