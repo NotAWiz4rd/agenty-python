@@ -1,7 +1,6 @@
 # ask_human_tool.py
 
 import json
-from typing import Dict, Any
 
 from agent.tools.base_tool import ToolDefinition
 
@@ -36,7 +35,7 @@ AskHumanInputSchema = {
 }
 
 
-def ask_human(input_data: Dict[str, Any]) -> str:
+def ask_human(input_data: dict) -> str:
     """
     Interrupts the current execution to ask the human user a question.
     Returns the human's response as a string.

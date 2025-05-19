@@ -1,7 +1,6 @@
 # send_group_message_tool.py
 
 import json
-from typing import Dict, Any
 
 import requests
 
@@ -28,7 +27,7 @@ SendGroupMessageInputSchema = {
 API_URL = "http://127.0.0.1:5000/send"
 
 
-def send_group_message(input_data: Dict[str, Any]) -> str:
+def send_group_message(input_data: dict) -> str:
     """
     Sends a message to the group chat via the API.
     """
