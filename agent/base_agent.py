@@ -24,6 +24,8 @@ from agent.tools.restart_program_tool import save_conv_and_restart
 # Global conversation context
 _CONVERSATION_CONTEXT = None
 
+TEAM_MODE = True  # Set to True if running in team mode
+
 tool_list = [
     ReadFileDefinition,
     ListFilesDefinition,
@@ -34,9 +36,11 @@ tool_list = [
     ResetContextDefinition,
     AskHumanDefinition,
     CalculatorDefinition,
-    SendGroupMessageDefinition,
     CreateToolDefinition,
 ]
+# Only add certain tools if in team mode
+if TEAM_MODE:
+    tool_list.append(SendGroupMessageDefinition)
 
 
 def get_conversation_context():
