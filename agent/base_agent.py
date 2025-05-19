@@ -6,6 +6,7 @@ import sys
 
 import anthropic
 
+from agent.tools import SendGroupMessageDefinition
 from tools.ask_human_tool import AskHumanDefinition
 from tools.calculator_tool import CalculatorDefinition
 from tools.delete_file_tool import DeleteFileDefinition
@@ -293,6 +294,7 @@ def main():
         ResetContextDefinition,
         AskHumanDefinition,
         CalculatorDefinition,
+        SendGroupMessageDefinition,
     ]
     agent = Agent(client, get_user_message, tools)
 
