@@ -6,19 +6,37 @@ import sys
 
 import anthropic
 
-from agent.tools import SendGroupMessageDefinition
-from tools.ask_human_tool import AskHumanDefinition
-from tools.calculator_tool import CalculatorDefinition
-from tools.delete_file_tool import DeleteFileDefinition
-from tools.edit_file_tool import EditFileDefinition
-from tools.git_command_tool import GitCommandDefinition
-from tools.list_files_tool import ListFilesDefinition
-from tools.read_file_tool import ReadFileDefinition
-from tools.reset_context_tool import ResetContextDefinition
-from tools.restart_program_tool import RestartProgramDefinition, save_conv_and_restart
+from agent.tools import (
+    SendGroupMessageDefinition,
+    CreateToolDefinition,
+    AskHumanDefinition,
+    CalculatorDefinition,
+    DeleteFileDefinition,
+    EditFileDefinition,
+    GitCommandDefinition,
+    ListFilesDefinition,
+    ReadFileDefinition,
+    ResetContextDefinition,
+    RestartProgramDefinition
+)
+from agent.tools.restart_program_tool import save_conv_and_restart
 
 # Global conversation context
 _CONVERSATION_CONTEXT = None
+
+tool_list = [
+    ReadFileDefinition,
+    ListFilesDefinition,
+    EditFileDefinition,
+    DeleteFileDefinition,
+    GitCommandDefinition,
+    RestartProgramDefinition,
+    ResetContextDefinition,
+    AskHumanDefinition,
+    CalculatorDefinition,
+    SendGroupMessageDefinition,
+    CreateToolDefinition,
+]
 
 
 def get_conversation_context():
@@ -113,8 +131,9 @@ class Agent:
                         self.consecutive_tool_count = 0
                     else:  # Only increment for non-ask_human tools
                         self.consecutive_tool_count += 1
-                        print(f"\033[96mConsecutive tool count: {self.consecutive_tool_count}/{self.max_consecutive_tools}\033[0m")
-                        
+                        print(
+                            f"\033[96mConsecutive tool count: {self.consecutive_tool_count}/{self.max_consecutive_tools}\033[0m")
+
                     result = self.execute_tool(block.id, block.name, block.input)
                     tool_results.append({
                         "type": "tool_result",
@@ -195,7 +214,7 @@ class Agent:
                 "description": t.description,
                 "input_schema": t.input_schema
             })
-            
+
         # If we've hit our consecutive tool limit, we'll force Claude to use the ask_human tool
         tool_choice = {"type": "auto"}
         if self.consecutive_tool_count >= self.max_consecutive_tools:
@@ -284,18 +303,7 @@ def log_error(error_message):
 
 def main():
     client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
-    tools = [
-        ReadFileDefinition,
-        ListFilesDefinition,
-        EditFileDefinition,
-        DeleteFileDefinition,
-        GitCommandDefinition,
-        RestartProgramDefinition,
-        ResetContextDefinition,
-        AskHumanDefinition,
-        CalculatorDefinition,
-        SendGroupMessageDefinition,
-    ]
+    tools = tool_list
     agent = Agent(client, get_user_message, tools)
 
     # Register cleanup function to run on exit

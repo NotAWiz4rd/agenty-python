@@ -1,5 +1,6 @@
 from .ask_human_tool import AskHumanDefinition
 from .calculator_tool import CalculatorDefinition
+from .create_tool_tool import CreateToolDefinition
 from .delete_file_tool import DeleteFileDefinition
 from .edit_file_tool import EditFileDefinition
 from .git_command_tool import GitCommandDefinition
@@ -21,4 +22,5 @@ TOOLS = [
     CalculatorDefinition,
     ResetContextDefinition,
     RestartProgramDefinition,
+    CreateToolDefinition,
 ]
