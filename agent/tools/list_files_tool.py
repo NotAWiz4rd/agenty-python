@@ -23,6 +23,7 @@ excluded_folders = {
     ".vscode",  # VS Code configs
     "__pycache__",  # Python bytecode
     "venv",  # Python virtual environments
+    ".venv",  # Python virtual environments
     "env",  # alternative venv name
     ".mypy_cache",  # mypy type-checking cache
     ".pytest_cache",  # pytest cache
