@@ -37,12 +37,14 @@ The agent comes with several built-in tools:
 - `restart_program`: Restart while preserving conversation context
 - `reset_context`: Reset the conversation context and restart the program
 - `ask_human`: Request information or confirmation from the human user
+- `create_tool`: Create a new tool for the agent to use
+- `calculator`: Perform basic arithmetic operations
 
 ## Safety Mechanisms
 
 The agent includes several safety features:
 
-- **Consecutive Tool Limit**: After 7 consecutive tool calls without human interaction, the agent is forced to check in with the human user
+- **Consecutive Tool Limit**: After 10 consecutive tool calls without human interaction, the agent is forced to check in with the human user
 - **Error Logging**: Unhandled exceptions are logged to an error.txt file
 - **Context Preservation on Error**: Conversation context is preserved when errors occur
 - **Controlled Context Management**: Context can be explicitly reset when needed
