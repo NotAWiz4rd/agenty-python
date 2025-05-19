@@ -6,8 +6,7 @@
 import json
 import math
 import operator
-from functools import reduce  # For Python 3
-from tools.base_tool import ToolDefinition
+from agent.tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the calculator tool

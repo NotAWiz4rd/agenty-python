@@ -3,7 +3,7 @@
 import json
 import subprocess
 import shlex
-from tools.base_tool import ToolDefinition
+from agent.tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the git_command tool

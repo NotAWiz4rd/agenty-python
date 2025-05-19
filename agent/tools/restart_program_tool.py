@@ -5,7 +5,7 @@ import os
 import pickle
 import sys
 
-from tools.base_tool import ToolDefinition
+from agent.tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input schema for the restart_program tool

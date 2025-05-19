@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from tools.base_tool import ToolDefinition
+from agent.tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the delete_file tool
