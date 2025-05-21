@@ -1,8 +1,13 @@
-# Agenty - Self-Extending AI Agent System
+# Agenty - Self-Extending AI (Multi-)Agent System
 
 This is an AI agent system that can self-extend by writing more tools for itself,
 interact with files, execute Git commands, maintain conversation context across restarts,
 and incorporate human feedback when needed.
+
+An extension to support multiple agents working together is currently under way and completely experimental.
+To start an agent in multi-agent mode, set TEAM_MODE in base_agent.py to true.
+Team mode is still in development.
+
 
 ## Features
 
