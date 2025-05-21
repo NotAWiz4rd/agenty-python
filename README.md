@@ -45,6 +45,9 @@ The agent comes with several built-in tools:
 - `create_tool`: Create a new tool for the agent to use
 - `calculator`: Perform basic arithmetic operations
 
+## Multiple Agents - Target Architecture (Experimental)
+![multi-agent-framework.jpeg](multi-agent-framework.jpeg)
+
 ## Safety Mechanisms
 
 The agent includes several safety features:
