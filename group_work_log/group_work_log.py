@@ -1,9 +1,10 @@
-import os
 import threading
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
 import anthropic
+import uvicorn
+from anthropic.types import MessageParam
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -12,28 +13,29 @@ SUMMARY_FILE = "agent_work_summaries.txt"
 lock = threading.Lock()  # For thread-safe write operations
 
 # Anthropic client for summaries
-claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+claude_client = anthropic.Anthropic()
 
 
-class ConversationRequest(BaseModel):
+class WorklogRequest(BaseModel):
     agent_id: str
     first_timestamp: str
     last_timestamp: str
     conversation: List[Dict[str, Any]]
 
 
-class WorkLogSummary(BaseModel):
+class WorklogSummary(BaseModel):
     timestamp: str
     summary: str
     agents: List[str]  # List of agents in this summary
 
 
 # In-memory storage for summaries
-summaries: List[WorkLogSummary] = []
+summaries: List[WorklogSummary] = []
 
 
 # Load existing summaries on startup
 def load_summaries():
+    print("Loading existing summaries...")
     try:
         with open(SUMMARY_FILE, "r", encoding="utf-8") as f:
             for line in f:
@@ -50,7 +52,7 @@ def load_summaries():
                     else:
                         raise ValueError("Missing or malformed timestamp in summary file.")
 
-                    summaries.append(WorkLogSummary(
+                    summaries.append(WorklogSummary(
                         timestamp=timestamp,
                         agents=agents,
                         summary=summary_text
@@ -58,9 +60,6 @@ def load_summaries():
     except FileNotFoundError:
         # File doesn't exist yet, which is fine
         pass
-
-
-load_summaries()
 
 
 def extract_assistant_actions(conversation: List[Dict[str, Any]]) -> str:
@@ -86,8 +85,8 @@ def extract_assistant_actions(conversation: List[Dict[str, Any]]) -> str:
     return "\n\n".join(assistant_msgs)
 
 
-def summarize_conversation(agent_id: str, conversation: List[Dict[str, Any]],
-                          first_timestamp: str, last_timestamp: str) -> str:
+def summarize_worklog(agent_id: str, conversation: List[Dict[str, Any]],
+                      first_timestamp: str, last_timestamp: str) -> str:
     """Creates a summary of assistant actions in the conversation"""
     assistant_actions = extract_assistant_actions(conversation)
 
@@ -95,27 +94,31 @@ def summarize_conversation(agent_id: str, conversation: List[Dict[str, Any]],
         return f"=== AGENT: {agent_id} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nNo assistant activity found."
 
     try:
+        summarise_message = f"""Here are the actions of an AI assistant in a conversation:
+
+                    {assistant_actions}
+                    
+                    Create a clear, concise summary that:
+                    1. Focuses only on the activities of the assistant
+                    2. Highlights important actions, tools, and results
+                    3. Uses bullet points for better readability
+                    4. Is brief but informative"""
+
+        system_prompt = f"""You are a helpful assistant. Your task is to summarize the actions of an AI assistant in a conversation. 
+        Make sure to focus on the assistant's activities, tools used, and results achieved. Use bullet points for clarity and conciseness. 
+        Don't glance over important details, especially anything that seems out of the ordinary."""
+
         # LLM request for summary
         response = claude_client.messages.create(
-            model="claude-3-haiku-20240307",
+            model="claude-3-5-haiku-latest",
             max_tokens=500,
             messages=[
-                {
-                    "role": "user",
-                    "content": f"""Here are the actions of an AI assistant in a conversation:
-
-{assistant_actions}
-
-Create a clear, concise summary that:
-1. Focuses only on the activities of the assistant
-2. Highlights important actions, tools, and results
-3. Uses bullet points for better readability
-4. Is brief but informative"""
-                }
+                MessageParam(role="user", content=system_prompt),
+                MessageParam(role="user", content=summarise_message)
             ]
         )
 
-        agent_summary = response.content[0].text
+        agent_summary = response.content[0].text  # type: ignore
 
         # Count assistant messages
         step_count = sum(1 for msg in conversation if msg.get("role") == "assistant")
@@ -130,13 +133,13 @@ Create a clear, concise summary that:
 
     except Exception as e:
         # Error handling
-        logger.error(f"Error creating summary for agent {agent_id}: {str(e)}")
+        print(f"Error creating summary for agent {agent_id}: {str(e)}")
         return f"=== AGENT: {agent_id} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nError creating summary: {str(e)}"
 
 
-@app.post("/summarize_conversation")
-async def process_conversation(request: ConversationRequest):
-    """Processes a complete conversation and creates a summary"""
+@app.post("/submit-worklog")
+async def submit_worklog(request: WorklogRequest):
+    """Processes a complete worklog and creates a summary"""
     agent_id = request.agent_id
     first_timestamp = request.first_timestamp
     last_timestamp = request.last_timestamp
@@ -153,10 +156,10 @@ async def process_conversation(request: ConversationRequest):
 
     with lock:
         # Create summary
-        summary_text = summarize_conversation(agent_id, conversation, first_timestamp, last_timestamp)
+        summary_text = summarize_worklog(agent_id, conversation, first_timestamp, last_timestamp)
 
         # Store summary
-        summary = WorkLogSummary(
+        summary = WorklogSummary(
             timestamp=now,
             summary=summary_text,
             agents=[agent_id]
@@ -189,6 +192,10 @@ async def get_summaries(after_timestamp: Optional[str] = None):
     return summaries
 
 
-if __name__ == "__main__":
-    import uvicorn
+def main():
+    load_summaries()
     uvicorn.run(app, host="0.0.0.0", port=8082)
+
+
+if __name__ == "__main__":
+    main()
