@@ -4,6 +4,7 @@ import sys
 
 from agent.tools import (
     SendGroupMessageDefinition,
+    SendAgentMessageDefinition,
     CreateToolDefinition,
     AskHumanDefinition,
     CalculatorDefinition,
@@ -38,6 +39,7 @@ def get_tool_list(is_team_mode: bool) -> list:
     # Only add certain tools if in team mode
     if is_team_mode:
         tool_list.append(SendGroupMessageDefinition)
+        tool_list.append(SendAgentMessageDefinition)
         tool_list.append(WaitDefinition)
 
     return tool_list

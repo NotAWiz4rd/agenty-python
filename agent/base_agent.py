@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import sys
+import time
+import select
+import uuid
 
-from agent.context_handling import set_conversation_context, load_conversation
+from agent.context_handling import (set_conversation_context, load_conversation,
+                                   get_from_message_queue, has_pending_messages)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message
@@ -41,6 +45,8 @@ class Agent:
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
+        # Time interval for checking the message queue (in seconds)
+        self.queue_check_interval = 0.1
 
     def run(self):
         # Try to load saved conversation context
@@ -95,7 +101,7 @@ class Agent:
                         "content": result
                     })
 
-            # 2) First, append the assistant’s own message (including its tool_use blocks!)
+            # 2) First, append the assistant's own message (including its tool_use blocks!)
             conversation.append({
                 "role": "assistant",
                 "content": [
