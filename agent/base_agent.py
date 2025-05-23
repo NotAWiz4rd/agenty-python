@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import sys
 
-import requests
-
 from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
-from agent.util import check_for_agent_restart, get_user_message
+from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
 
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
@@ -49,7 +47,7 @@ class Agent:
         self.client = client
         self.tools = get_tool_list(team_mode)
         self.is_team_mode = team_mode
-        self.read_user_input = not team_mode # initialise to True if not in team mode
+        self.read_user_input = not team_mode  # initialise to True if not in team mode
         # Initialize counter for tracking consecutive tool calls without human interaction
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
@@ -58,38 +56,14 @@ class Agent:
 
     def check_group_messages(self):
         """Checks for new group chat messages and adds them to the message queue.
-
-        This function uses the /messages API endpoint to get messages, identifies
-        new messages that weren't processed before, and adds them to the agent's message queue.
         If there are no new messages, nothing happens.
         """
-        try:
-            # Get messages from the API endpoint
-            response = requests.get("http://localhost:5000/messages")
-            if response.status_code != 200:
-                print(f"\033[91mFailed to fetch messages: {response.status_code}\033[0m")
-                return
-
-            all_messages = response.json()
-
-            # Process only new messages
-            new_messages = [message for message in all_messages if message not in self.group_chat_messages]
-
-            if not new_messages:
-                return
-
-            # update our internal list of group messages
-            self.group_chat_messages.extend(new_messages)
-            # Add new messages to the queue
-            for username, message in new_messages:
-                formatted_message = f"[Group Chat] {username}: {message}"
-                add_to_message_queue(formatted_message)
-
-            if new_messages:
-                print(f"\033[96mAdded {len(new_messages)} new group messages to the queue\033[0m")
-        except Exception:
-            # Silently fail to avoid disrupting the agent's normal operation
-            pass
+        new_messages = get_new_messages_from_group_chat(self.group_chat_messages)
+        self.group_chat_messages.extend(new_messages)
+        # Add new messages to the queue
+        for message in new_messages:
+            formatted_message = f"[Group Chat] {message['username']}: {message['message']}"
+            add_to_message_queue(formatted_message)
 
     def run(self):
         # Try to load saved conversation context

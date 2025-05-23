@@ -3,6 +3,10 @@ import os
 import pickle
 import sys
 
+import requests
+
+GROUP_CHAT_API = "http://localhost:5000/messages"
+
 
 def check_for_agent_restart(conversation) -> bool:
     agent_initiated_restart = False
@@ -78,3 +82,28 @@ def save_conv_and_restart(conversation, save_file: str = "conversation_context.p
     # re-exec in-place:
     python = sys.executable
     os.execv(python, [python] + sys.argv)
+
+
+def get_new_messages_from_group_chat(current_messages: list) -> list:
+    """Get messages from the group chat"""
+    try:
+        # Get messages from the API endpoint
+        response = requests.get(GROUP_CHAT_API)
+        if response.status_code != 200:
+            print(f"\033[91mFailed to fetch messages: {response.status_code}\033[0m")
+            return []
+
+        all_messages = response.json()
+
+        # Check which messages are new
+        new_messages = [message for message in all_messages if message not in current_messages]
+
+        if not new_messages:
+            return []
+        else:
+            print(f"\033[96mFound {len(new_messages)} new group messages\033[0m")
+            return new_messages
+    except Exception:
+        # Silently fail to avoid disrupting the agent's normal operation
+        pass
+    return [] # fallback if API call fails
