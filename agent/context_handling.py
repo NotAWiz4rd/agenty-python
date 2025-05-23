@@ -1,12 +1,17 @@
 import os
 import pickle
 import sys
+import queue
+import threading
 
 from agent.util import log_error
 
 # Global conversation context
 _CONVERSATION_CONTEXT = None
 
+# Message queue for API requests
+_MESSAGE_QUEUE = queue.Queue()
+_QUEUE_LOCK = threading.Lock()
 
 def get_conversation_context():
     """Function to access the global conversation context"""
@@ -18,6 +23,30 @@ def set_conversation_context(context):
     """Function to set the global conversation context"""
     global _CONVERSATION_CONTEXT
     _CONVERSATION_CONTEXT = context
+
+
+def add_to_message_queue(message, message_id=None):
+    """Adds a message to the processing queue"""
+    _MESSAGE_QUEUE.put((message, message_id))
+    return True
+
+
+def get_from_message_queue(block=False, timeout=None):
+    """Gets a message from the queue if available"""
+    try:
+        message_data = _MESSAGE_QUEUE.get(block=block, timeout=timeout)
+        # Support old format (message only) and new format (message, ID)
+        if isinstance(message_data, tuple) and len(message_data) == 2:
+            return message_data, True
+        else:
+            return (message_data, None), True
+    except queue.Empty:
+        return (None, None), False
+
+
+def has_pending_messages():
+    """Checks if messages are available in the queue"""
+    return not _MESSAGE_QUEUE.empty()
 
 
 def cleanup_context():
@@ -48,3 +77,4 @@ def load_conversation(save_file="conversation_context.pkl"):
         except Exception as e:
             print(f"Error loading conversation: {str(e)}")
     return None
+

@@ -2,8 +2,12 @@
 import json
 import os
 import sys
+import time
+import select
+import uuid
 
-from agent.context_handling import set_conversation_context, load_conversation
+from agent.context_handling import (set_conversation_context, load_conversation,
+                                   get_from_message_queue, has_pending_messages)
 from agent.llm import run_inference
 from agent.tools.restart_program_tool import save_conv_and_restart
 from agent.tools_utils import get_tool_list, execute_tool
@@ -18,6 +22,8 @@ class Agent:
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
+        # Time interval for checking the message queue (in seconds)
+        self.queue_check_interval = 0.1
 
     def run(self):
         # Try to load saved conversation context
@@ -44,19 +50,50 @@ class Agent:
 
         while True:
             if read_user_input:
-                # prompt for user
-                try:
-                    print(f"\033[94mYou\033[0m: ", end="", flush=True)
-                    user_input, ok = get_user_message()
-                except KeyboardInterrupt:
-                    # Let the atexit handler take care of deleting the context file
-                    print("\nExiting program.")
-                    sys.exit(0)
-                if not ok:
-                    break
-                conversation.append({"role": "user", "content": user_input})
-                # Reset consecutive tool count when user provides input
-                self.consecutive_tool_count = 0
+                # First check if messages are in the API queue
+                message_data, has_api_message = get_from_message_queue(block=False)
+                message, message_id = message_data
+
+                if has_api_message:
+                    # If no Message-ID is provided, generate one
+                    if not message_id:
+                        message_id = str(uuid.uuid4())
+
+                    # Process API message
+                    print(f"\033[95mAPI-Request\033[0m: {message}")
+                    conversation.append({"role": "user", "content": message})
+                    # Reset consecutive tool count when user provides input
+                    self.consecutive_tool_count = 0
+                else:
+                    # Check if input is available without blocking
+                    # If yes, ask for user input as normal
+                    # If no and API messages are available, process them
+                    # Is stdin ready for input?
+                    ready_to_read, _, _ = select.select([sys.stdin], [], [], 0.1)
+
+                    if ready_to_read:
+                        # User input is available
+                        try:
+                            print(f"\033[94mYou\033[0m: ", end="", flush=True)
+                            user_input, ok = get_user_message()
+                        except KeyboardInterrupt:
+                            # Let the atexit handler take care of deleting the context file
+                            print("\nExiting program.")
+                            sys.exit(0)
+                        if not ok:
+                            break
+                        conversation.append({"role": "user", "content": user_input})
+                        # Reset consecutive tool count when user provides input
+                        self.consecutive_tool_count = 0
+                    elif has_pending_messages():
+                        # No user input, but API messages are available
+                        # Continue directly to check the queue again
+                        continue
+                    else:
+                        # No user input, no API messages
+                        # Short pause and then check again
+                        time.sleep(self.queue_check_interval)
+                        continue
 
             response = run_inference(conversation, self.client, self.tools, self.consecutive_tool_count,
                                      self.max_consecutive_tools)
@@ -82,7 +119,7 @@ class Agent:
                         "content": result
                     })
 
-            # 2) First, append the assistant’s own message (including its tool_use blocks!)
+            # 2) First, append the assistant's own message (including its tool_use blocks!)
             conversation.append({
                 "role": "assistant",
                 "content": [
@@ -109,7 +146,7 @@ class Agent:
                 })
                 read_user_input = False
 
-                # detect “please restart” signals
+                # detect "please restart" signals
                 for tr in tool_results:
                     content = tr.get("content")
                     payload = None
@@ -146,3 +183,4 @@ class Agent:
                             save_conv_and_restart(conversation)
             else:
                 read_user_input = True
+
