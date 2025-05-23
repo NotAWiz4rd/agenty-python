@@ -67,20 +67,20 @@ def extract_assistant_actions(conversation: List[Dict[str, Any]]) -> str:
     assistant_msgs = []
 
     for msg in conversation:
-        if msg.get("role") == "assistant":
-            content = msg.get("content", [])
+        content = msg.get("content", [])
 
-            # Content can be a list of blocks or simple text
-            if isinstance(content, list):
-                for block in content:
-                    if block.get("type") == "text":
-                        assistant_msgs.append(block.get("text", ""))
-                    elif block.get("type") == "tool_use":
-                        tool_name = block.get("name", "unknown tool")
-                        tool_input = block.get("input", {})
-                        assistant_msgs.append(f"Tool used: {tool_name} with input: {tool_input}")
-            elif isinstance(content, str):
-                assistant_msgs.append(content)
+        # Content can be a list of blocks or simple text
+        if isinstance(content, list):
+            for block in content:
+                # todo does it make sense to check for "tool_result" here? I.e. do we need to check at all?
+                if block.get("type") == "text":
+                    assistant_msgs.append(block.get("text", ""))
+                elif block.get("type") == "tool_use":
+                    tool_name = block.get("name", "unknown tool")
+                    tool_input = block.get("input", {})
+                    assistant_msgs.append(f"Tool used: {tool_name} with input: {tool_input}")
+        elif isinstance(content, str):
+            assistant_msgs.append(content)
 
     return "\n\n".join(assistant_msgs)
 
