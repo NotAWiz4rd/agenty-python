@@ -174,12 +174,13 @@ async def get_summaries(after_timestamp: Optional[str] = None):
     """Retrieves summaries after a specified timestamp"""
     if after_timestamp:
         try:
-            # Try to validate timestamp
+            # Validate timestamp format
+            datetime.strptime(after_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
             filtered_summaries = [s for s in summaries if s.timestamp > after_timestamp]
             return filtered_summaries
-        except:
-            # For invalid timestamp format, return all
-            return summaries
+        except ValueError:
+            # Return HTTP 400 for invalid timestamp format
+            raise HTTPException(status_code=400, detail="Invalid timestamp format. Expected ISO 8601 format.")
     return summaries
 
 
