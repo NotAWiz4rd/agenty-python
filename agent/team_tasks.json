@@ -1,0 +1,37 @@
+{
+  "next_id": 5,
+  "tasks": [
+    {
+      "id": 1,
+      "description": "Test the new task tracker system functionality",
+      "status": "completed",
+      "assigned_to": "Agent-Alpha",
+      "created": "2025-05-23T13:42:04.500515",
+      "updated": "2025-05-23T13:43:17.599259"
+    },
+    {
+      "id": 2,
+      "description": "Implement team collaboration features",
+      "status": "pending",
+      "assigned_to": "Agent-Beta",
+      "created": "2025-05-23T13:42:28.146519",
+      "updated": "2025-05-23T13:42:28.146539"
+    },
+    {
+      "id": 3,
+      "description": "Set up team communication protocols and message handling workflows",
+      "status": "pending",
+      "assigned_to": "unassigned",
+      "created": "2025-05-23T13:44:31.838797",
+      "updated": "2025-05-23T13:44:31.838854"
+    },
+    {
+      "id": 4,
+      "description": "Create documentation for the new task tracker tool and its usage",
+      "status": "completed",
+      "assigned_to": "unassigned",
+      "created": "2025-05-23T13:44:58.698067",
+      "updated": "2025-05-23T13:47:09.593150"
+    }
+  ]
+}
