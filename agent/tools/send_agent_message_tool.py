@@ -62,8 +62,6 @@ def send_agent_message(input_data: dict) -> str:
     # Get the API endpoint for the target agent
     api_url = AGENT_ENDPOINTS[target_agent]
 
-    # Format the message to include sender information
-
     payload = {"message": message, "from_agent": from_agent}
 
     try:
