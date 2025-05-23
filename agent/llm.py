@@ -22,7 +22,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_c
             # We'll reset the counter when ask_human is actually executed
 
     return llm_client.messages.create(
-        model="claude-3-7-sonnet-20250219",
+        model="claude-sonnet-4-20250514",
         max_tokens=4000,
         messages=conversation,
         tool_choice=tool_choice,
