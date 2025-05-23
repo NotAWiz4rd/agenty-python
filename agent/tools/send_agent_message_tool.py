@@ -62,9 +62,8 @@ def send_agent_message(input_data: dict) -> str:
     api_url = AGENT_ENDPOINTS[target_agent]
 
     # Format the message to include sender information
-    formatted_message = f"[Direct message from {from_agent}]: {message}"
 
-    payload = {"message": formatted_message}
+    payload = {"message": message, "from_agent": from_agent}
 
     try:
         response = requests.post(api_url, json=payload, timeout=5)
