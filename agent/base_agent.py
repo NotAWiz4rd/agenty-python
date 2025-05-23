@@ -1,65 +1,19 @@
 #!/usr/bin/env python3
 import json
 import os
-import pickle
 import sys
 
-import anthropic
-
-from agent.tools import (
-    SendGroupMessageDefinition,
-    CreateToolDefinition,
-    AskHumanDefinition,
-    CalculatorDefinition,
-    DeleteFileDefinition,
-    EditFileDefinition,
-    GitCommandDefinition,
-    ListFilesDefinition,
-    ReadFileDefinition,
-    ResetContextDefinition,
-    RestartProgramDefinition
-)
+from agent.context_handling import set_conversation_context, load_conversation
+from agent.llm import run_inference
 from agent.tools.restart_program_tool import save_conv_and_restart
-
-# Global conversation context
-_CONVERSATION_CONTEXT = None
-
-TEAM_MODE = True  # Set to True if running in team mode
-
-tool_list = [
-    ReadFileDefinition,
-    ListFilesDefinition,
-    EditFileDefinition,
-    DeleteFileDefinition,
-    GitCommandDefinition,
-    RestartProgramDefinition,
-    ResetContextDefinition,
-    AskHumanDefinition,
-    CalculatorDefinition,
-    CreateToolDefinition,
-]
-# Only add certain tools if in team mode
-if TEAM_MODE:
-    tool_list.append(SendGroupMessageDefinition)
-
-
-def get_conversation_context():
-    """Function to access the global conversation context"""
-    global _CONVERSATION_CONTEXT
-    return _CONVERSATION_CONTEXT
-
-
-def set_conversation_context(context):
-    """Function to set the global conversation context"""
-    global _CONVERSATION_CONTEXT
-    _CONVERSATION_CONTEXT = context
+from agent.tools_utils import get_tool_list, execute_tool
+from agent.util import check_for_agent_restart, get_user_message
 
 
 class Agent:
-    def __init__(self, client, get_user_message, tools):
+    def __init__(self, client, team_mode):
         self.client = client
-        self.get_user_message = get_user_message
-        self.tools = tools
+        self.tools = get_tool_list(team_mode)
         # Initialize counter for tracking consecutive tool calls without human interaction
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
@@ -67,30 +21,13 @@ class Agent:
 
     def run(self):
         # Try to load saved conversation context
-        conversation = self.load_conversation()
+        conversation = load_conversation()
 
         # Check if this is a restart initiated by the agent
         agent_initiated_restart = False
         if conversation:
             print("Restored previous conversation context")
-            # Check if the last tool result indicates an agent-initiated restart
-            for i in range(len(conversation) - 1, -1, -1):
-                msg = conversation[i]
-                if msg["role"] == "user" and "content" in msg and isinstance(msg["content"], list):
-                    for item in msg["content"]:
-                        if item.get("type") == "tool_result" and isinstance(item.get("content"), str):
-                            try:
-                                tool_result = json.loads(item["content"])
-                                if isinstance(tool_result, dict) and tool_result.get("restart") and tool_result.get(
-                                        "agent_initiated"):
-                                    agent_initiated_restart = True
-                                    print("Continuing execution after agent-initiated restart")
-                                    break
-                            except (json.JSONDecodeError, TypeError):
-                                pass
-                if agent_initiated_restart:
-                    break
-
+            agent_initiated_restart = check_for_agent_restart(conversation)
             # If we're continuing after a restart, add a system message to inform the agent
             if agent_initiated_restart:
                 conversation.append({
@@ -103,7 +40,6 @@ class Agent:
         # Set the global conversation context reference
         set_conversation_context(conversation)
 
-        print("Chat with Claude (use 'ctrl+c' to exit)")
         read_user_input = not agent_initiated_restart
 
         while True:
@@ -111,7 +47,7 @@ class Agent:
                 # prompt for user
                 try:
                     print(f"\033[94mYou\033[0m: ", end="", flush=True)
-                    user_input, ok = self.get_user_message()
+                    user_input, ok = get_user_message()
                 except KeyboardInterrupt:
                     # Let the atexit handler take care of deleting the context file
                     print("\nExiting program.")
@@ -122,7 +58,8 @@ class Agent:
                 # Reset consecutive tool count when user provides input
                 self.consecutive_tool_count = 0
 
-            response = self.run_inference(conversation)
+            response = run_inference(conversation, self.client, self.tools, self.consecutive_tool_count,
+                                     self.max_consecutive_tools)
             tool_results = []
 
             # print assistant text and collect any tool calls
@@ -138,7 +75,7 @@ class Agent:
                         print(
                             f"\033[96mConsecutive tool count: {self.consecutive_tool_count}/{self.max_consecutive_tools}\033[0m")
 
-                    result = self.execute_tool(block.id, block.name, block.input)
+                    result = execute_tool(self.tools, block.name, block.input)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
@@ -209,126 +146,3 @@ class Agent:
                             save_conv_and_restart(conversation)
             else:
                 read_user_input = True
-
-    def run_inference(self, conversation):
-        tools_param = []
-        for t in self.tools:
-            tools_param.append({
-                "name": t.name,
-                "description": t.description,
-                "input_schema": t.input_schema
-            })
-
-        # If we've hit our consecutive tool limit, we'll force Claude to use the ask_human tool
-        tool_choice = {"type": "auto"}
-        if self.consecutive_tool_count >= self.max_consecutive_tools:
-            print(f"\033[93mForcing human check-in after {self.max_consecutive_tools} consecutive tool calls\033[0m")
-            # Find the ask_human tool
-            ask_human_tool = next((t for t in self.tools if t.name == "ask_human"), None)
-            if ask_human_tool:
-                # Force the use of ask_human tool
-                tool_choice = {
-                    "type": "tool",
-                    "name": "ask_human"
-                }
-                # We'll reset the counter when ask_human is actually executed
-
-        return self.client.messages.create(
-            model="claude-3-7-sonnet-20250219",
-            max_tokens=4000,
-            messages=conversation,
-            tool_choice=tool_choice,
-            tools=tools_param
-        )
-
-    def execute_tool(self, id, name, input_data):
-        tool_def = next((t for t in self.tools if t.name == name), None)
-        if not tool_def:
-            return "tool not found"
-        print(f"\033[92mtool\033[0m: {name}({json.dumps(input_data)})")
-        try:
-            return tool_def.function(input_data)
-        except Exception as e:
-            return str(e)
-
-    @staticmethod
-    def load_conversation(save_file="conversation_context.pkl"):
-        """Load conversation context from a file if it exists"""
-        if os.path.exists(save_file):
-            try:
-                with open(save_file, 'rb') as f:
-                    return pickle.load(f)
-            except Exception as e:
-                print(f"Error loading conversation: {str(e)}")
-        return None
-
-
-def get_user_message():
-    """Get user message from standard input.
-    Returns a tuple of (message, success_flag)
-    """
-    try:
-        text = input()
-        return text, True
-    except EOFError:
-        return "", False
-
-
-def cleanup_context():
-    """Delete the conversation context file"""
-    # Skip cleanup if we're restarting the program intentionally
-    # or if we're exiting due to an error
-    if getattr(sys, "is_restarting", False) or getattr(sys, "is_error_exit", False):
-        if getattr(sys, "is_error_exit", False):
-            print("Context preserved due to error exit.")
-        return
-
-    context_file = "conversation_context.pkl"
-    if os.path.exists(context_file):
-        try:
-            os.remove(context_file)
-            print(f"\nContext file '{context_file}' deleted.")
-        except Exception as e:
-            print(f"\nError deleting context file: {str(e)}")
-            log_error(f"Error deleting context file: {str(e)}")
-
-
-def log_error(error_message):
-    """Log error message to error.txt file"""
-    try:
-        with open("error.txt", "a") as f:
-            import datetime
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"\n[{timestamp}] ERROR: {error_message}\n")
-        print(f"Error logged to error.txt")
-    except Exception as e:
-        print(f"Failed to log error to file: {str(e)}")
-
-
-def main():
-    client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
-    tools = tool_list
-    agent = Agent(client, get_user_message, tools)
-
-    # Register cleanup function to run on exit
-    import atexit
-    atexit.register(cleanup_context)
-
-    try:
-        agent.run()
-    except Exception as e:
-        error_message = f"Unhandled exception: {str(e)}"
-        log_error(error_message)
-        import traceback
-        error_details = traceback.format_exc()
-        log_error(error_details)
-        print(f"\nAn error occurred: {str(e)}")
-        print("The error has been logged to error.txt")
-        print("Your conversation context has been preserved.")
-        # Set flag to prevent context deletion
-        sys.is_error_exit = True
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
