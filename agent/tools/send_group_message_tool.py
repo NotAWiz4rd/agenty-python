@@ -43,7 +43,7 @@ def send_group_message(input_data: dict) -> str:
 
     payload = {"username": username, "message": message}
     try:
-        response = requests.post(API_URL, json=payload, timeout=5)
+        response = requests.post(GROUP_CHAT_API_URL, json=payload, timeout=5)
         response.raise_for_status()
         return f"Message sent as '{username}': {message}"
     except requests.RequestException as e:
