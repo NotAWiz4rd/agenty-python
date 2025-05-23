@@ -10,8 +10,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from agent.base_agent import Agent
-from agent.context_handling import (cleanup_context, add_to_message_queue,
-                                    has_pending_messages)
+from agent.context_handling import (cleanup_context, add_to_message_queue)
 from agent.util import log_error
 
 TEAM_MODE = True  # Set to True if running in team mode
@@ -31,7 +30,6 @@ class AgentRequest(BaseModel):
 class ApiResponse(BaseModel):
     response: str
     status: str = "queued"
-    message_id: str = None
 
 
 @app.post("/send-message")
@@ -48,16 +46,6 @@ async def send_to_agent(request: AgentRequest):
         response="Your message has been sent to the agent and will be processed in the conversation.",
         status="sent"
     )
-
-
-@app.get("/queue-status")
-async def get_queue_status():
-    """Returns the status of the message queue"""
-    has_messages = has_pending_messages()
-    return {
-        "has_pending_messages": has_messages,
-        "status": "active" if has_messages else "idle"
-    }
 
 
 def main():

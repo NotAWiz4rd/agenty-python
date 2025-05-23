@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import sys
-import time
-import select
-import uuid
 
 from agent.context_handling import (set_conversation_context, load_conversation,
-                                   get_from_message_queue, has_pending_messages)
+                                    get_from_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message
@@ -14,7 +11,14 @@ from agent.util import check_for_agent_restart, get_user_message
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
     if is_team_mode:
         # check message queue for new messages
-        # todo
+        message, has_api_message = get_from_message_queue(block=False)
+
+        if has_api_message:
+            # Process API message
+            print(f"\033[95mAPI-Request\033[0m: {message}")
+            consecutive_tool_count[0] = 0
+            return {"role": "user", "content": message}
+
         return {"role": "user", "content": "[Automated Message] There are currently no new messages. Please wait."}
     else:
         if read_user_input:

@@ -31,7 +31,7 @@ SendAgentMessageInputSchema = {
 # Hardcoded agent endpoints - map agent IDs to their API endpoints
 AGENT_ENDPOINTS = {
     "agent1": "http://127.0.0.1:8001/send-message",
-    "agent2": "http://127.0.0.1:8002/send-message", 
+    "agent2": "http://127.0.0.1:8002/send-message",
     "agent3": "http://127.0.0.1:8003/send-message",
     "agent4": "http://127.0.0.1:8004/send-message",
     "agent5": "http://127.0.0.1:8005/send-message"
@@ -60,12 +60,12 @@ def send_agent_message(input_data: dict) -> str:
 
     # Get the API endpoint for the target agent
     api_url = AGENT_ENDPOINTS[target_agent]
-    
+
     # Format the message to include sender information
     formatted_message = f"[Direct message from {from_agent}]: {message}"
-    
+
     payload = {"message": formatted_message}
-    
+
     try:
         response = requests.post(api_url, json=payload, timeout=5)
         response.raise_for_status()
