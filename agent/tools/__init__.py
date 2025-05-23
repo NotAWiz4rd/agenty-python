@@ -9,6 +9,7 @@ from .read_file_tool import ReadFileDefinition
 from .reset_context_tool import ResetContextDefinition
 from .restart_program_tool import RestartProgramDefinition
 from .send_group_message_tool import SendGroupMessageDefinition
+from .send_agent_message_tool import SendAgentMessageDefinition
 
 # Register all tools
 TOOLS = [
@@ -19,6 +20,7 @@ TOOLS = [
     GitCommandDefinition,
     AskHumanDefinition,
     SendGroupMessageDefinition,
+    SendAgentMessageDefinition,
     CalculatorDefinition,
     ResetContextDefinition,
     RestartProgramDefinition,
