@@ -49,8 +49,6 @@ class Agent:
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
-        # Time interval for checking the message queue (in seconds)
-        self.queue_check_interval = 0.1
 
     def run(self):
         # Try to load saved conversation context
