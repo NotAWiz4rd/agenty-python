@@ -49,12 +49,11 @@ class Agent:
         self.client = client
         self.tools = get_tool_list(team_mode)
         self.is_team_mode = team_mode
-        self.read_user_input = not team_mode
+        self.read_user_input = not team_mode # initialise to True if not in team mode
         # Initialize counter for tracking consecutive tool calls without human interaction
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
-        # Last processed message timestamp for group chat
         self.group_chat_messages = []
 
     def check_group_messages(self):
@@ -79,6 +78,8 @@ class Agent:
             if not new_messages:
                 return
 
+            # update our internal list of group messages
+            self.group_chat_messages.extend(new_messages)
             # Add new messages to the queue
             for username, message in new_messages:
                 formatted_message = f"[Group Chat] {username}: {message}"
