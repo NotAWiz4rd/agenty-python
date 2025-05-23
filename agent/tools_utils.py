@@ -1,4 +1,6 @@
 import json
+import os
+import sys
 
 from agent.tools import (
     SendGroupMessageDefinition,
@@ -13,6 +15,7 @@ from agent.tools import (
     ResetContextDefinition,
     RestartProgramDefinition
 )
+from agent.util import save_conv_and_restart
 
 
 def get_tool_list(is_team_mode: bool) -> list:
@@ -45,3 +48,46 @@ def execute_tool(tools, tool_name: str, input_data):
         return tool_def.function(input_data)
     except Exception as e:
         return str(e)
+
+
+def deal_with_tool_results(tool_results, conversation):
+    conversation.append({
+        "role": "user",
+        "content": tool_results
+    })
+
+    # detect “please restart” signals
+    for tr in tool_results:
+        content = tr.get("content")
+        payload = None
+
+        # if it's already a dict, use it directly
+        if isinstance(content, dict):
+            payload = content
+        # if it's a string, try parsing JSON
+        elif isinstance(content, str):
+            try:
+                payload = json.loads(content)
+                if not isinstance(payload, dict):
+                    # not a dict, skip
+                    payload = None
+                    continue
+            except (json.JSONDecodeError, TypeError):
+                # not JSON, skip
+                continue
+        # otherwise skip non‐dict, non‐str
+        else:
+            continue
+
+        # if tool asked for restart
+        if payload is not None and payload.get("restart"):
+            # Check if this is a reset_context request (don't save context)
+            if payload.get("reset_context"):
+                # Just restart without saving
+                # Set a flag to indicate we're intentionally restarting
+                sys.is_restarting = True
+                python = sys.executable
+                os.execv(python, [python] + sys.argv)
+            else:
+                # Normal restart - save and restart
+                save_conv_and_restart(conversation)

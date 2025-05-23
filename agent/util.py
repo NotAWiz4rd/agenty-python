@@ -1,4 +1,7 @@
 import json
+import os
+import pickle
+import sys
 
 
 def check_for_agent_restart(conversation) -> bool:
@@ -45,3 +48,33 @@ def get_user_message():
         return text, True
     except EOFError:
         return "", False
+
+
+def save_conversation(conversation, save_file: str):
+    """Save the conversation context to a file"""
+    try:
+        with open(save_file, 'wb') as f:
+            pickle.dump(conversation, f)
+        return True
+    except Exception as e:
+        error_message = f"Error saving conversation: {str(e)}"
+        print(error_message)
+        try:
+            with open("error.txt", "a") as f:
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                f.write(f"\n[{timestamp}] ERROR: {error_message}\n")
+        except Exception:
+            pass  # Silently fail if we can't log to error.txt
+        return False
+
+
+def save_conv_and_restart(conversation, save_file: str = "conversation_context.pkl"):
+    save_conversation(conversation, save_file)
+
+    # Set a flag to indicate we're intentionally restarting
+    sys.is_restarting = True  # type: ignore
+
+    # re-exec in-place:
+    python = sys.executable
+    os.execv(python, [python] + sys.argv)
