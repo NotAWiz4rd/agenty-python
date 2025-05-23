@@ -14,7 +14,7 @@ SendAgentMessageInputSchema = {
     "properties": {
         "target_agent": {
             "type": "string",
-            "description": "The identifier of the target agent to send the message to (e.g., 'agent1', 'agent2', 'agent3')."
+            "description": "The name of the target agent to send the message to (e.g., 'agent1')."
         },
         "message": {
             "type": "string",
@@ -22,13 +22,14 @@ SendAgentMessageInputSchema = {
         },
         "from_agent": {
             "type": "string",
-            "description": "The identifier of the agent sending the message (your agent ID)."
+            "description": "The name of the agent sending the message (your name)."
         }
     },
     "required": ["target_agent", "message", "from_agent"]
 }
 
 # Hardcoded agent endpoints - map agent IDs to their API endpoints
+# todo: make this dynamic
 AGENT_ENDPOINTS = {
     "agent1": "http://127.0.0.1:8001/send-message",
     "agent2": "http://127.0.0.1:8002/send-message",
@@ -83,7 +84,7 @@ SendAgentMessageDefinition = ToolDefinition(
     description=(
         "Send a direct message to a specific agent in your team. "
         "This allows private communication between agents rather than broadcasting to the group. "
-        "Specify the target agent ID and your message content."
+        "Specify the target agent name and your message content."
     ),
     input_schema=SendAgentMessageInputSchema,
     function=send_agent_message

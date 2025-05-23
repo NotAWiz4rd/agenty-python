@@ -24,7 +24,7 @@ SendGroupMessageInputSchema = {
     "required": ["username", "message"]
 }
 
-API_URL = "http://127.0.0.1:5000/send"
+GROUP_CHAT_API_URL = "http://127.0.0.1:5000/send"
 
 
 def send_group_message(input_data: dict) -> str:
