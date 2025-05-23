@@ -43,7 +43,12 @@ def load_summaries():
                     # Extract agent ID
                     agent_id = line.strip().split("===")[1].strip().split(":")[1].strip()
                     agents = [agent_id]
-                    timestamp = datetime.utcnow().isoformat()
+                    # Extract timestamp from the file (assuming it's in the format "TIMESTAMP: <ISO8601>")
+                    timestamp_line = next(f).strip()  # Read the next line for the timestamp
+                    if timestamp_line.startswith("TIMESTAMP:"):
+                        timestamp = timestamp_line.split("TIMESTAMP:")[1].strip()
+                    else:
+                        raise ValueError("Missing or malformed timestamp in summary file.")
 
                     summaries.append(WorkLogSummary(
                         timestamp=timestamp,
