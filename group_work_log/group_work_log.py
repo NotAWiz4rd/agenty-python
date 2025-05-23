@@ -125,7 +125,7 @@ Create a clear, concise summary that:
 
     except Exception as e:
         # Error handling
-        print(f"Error creating summary for agent {agent_id}: {str(e)}")
+        logger.error(f"Error creating summary for agent {agent_id}: {str(e)}")
         return f"=== AGENT: {agent_id} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nError creating summary: {str(e)}"
 
 
