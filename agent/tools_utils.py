@@ -13,7 +13,9 @@ from agent.tools import (
     ListFilesDefinition,
     ReadFileDefinition,
     ResetContextDefinition,
-    RestartProgramDefinition
+    RestartProgramDefinition,
+    TaskTrackerDefinition,
+    WaitDefinition,
 )
 from agent.util import save_conv_and_restart
 
@@ -31,10 +33,12 @@ def get_tool_list(is_team_mode: bool) -> list:
         AskHumanDefinition,
         CalculatorDefinition,
         CreateToolDefinition,
+        TaskTrackerDefinition,
     ]
     # Only add certain tools if in team mode
     if is_team_mode:
         tool_list.append(SendGroupMessageDefinition)
+        tool_list.append(WaitDefinition)
 
     return tool_list
 
