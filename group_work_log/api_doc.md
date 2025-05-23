@@ -71,7 +71,7 @@ Retrieves summaries of agent conversations.
 **Method:** GET
 
 **Query Parameters:**
-- `after_timestamp` (string, optional): Filter summaries created after this timestamp
+- `after_timestamp` (string, optional): Filter summaries created after this timestamp. Must be in ISO format (e.g., `2023-01-01T10:35:00.000000`). If an invalid format is provided, the API will return a `400 Bad Request` error.
 
 **Response:**
 ```json
