@@ -30,13 +30,15 @@ def add_to_message_queue(message):
     return True
 
 
-def get_from_message_queue(block=False, timeout=None) -> tuple:
+def get_from_message_queue(block=False) -> tuple:
     """Gets a message from the queue if available"""
-    try:
-        message_data = _MESSAGE_QUEUE.get(block=block, timeout=timeout)
-        return message_data, True
-    except queue.Empty:
+    message_data = []
+    while not _MESSAGE_QUEUE.empty():
+        message_data.append(_MESSAGE_QUEUE.get(block=block))
+    if len(message_data) == 0:
         return None, False
+    else:
+        return message_data, True
 
 
 def has_pending_messages():
