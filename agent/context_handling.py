@@ -2,7 +2,6 @@ import os
 import pickle
 import queue
 import sys
-import threading
 
 from agent.util import log_error
 
@@ -11,7 +10,6 @@ _CONVERSATION_CONTEXT = None
 
 # Message queue for API requests
 _MESSAGE_QUEUE = queue.Queue()
-_QUEUE_LOCK = threading.Lock()
 
 
 def get_conversation_context():
