@@ -11,7 +11,7 @@ from agent.context_handling import (cleanup_context)
 from agent.util import log_error
 
 # todo add ability to set team mode via env var
-TEAM_MODE = True  # Set to True if running in team mode
+TEAM_MODE = False  # Set to True if running in team mode
 
 client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
 global_agent = Agent(client, TEAM_MODE)

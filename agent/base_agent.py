@@ -88,8 +88,9 @@ class Agent:
         set_conversation_context(conversation)
 
         while True:
-            # Check for new group messages at each cycle
-            self.check_group_messages()
+            if self.is_team_mode:
+                # Check for new group messages at each cycle
+                self.check_group_messages()
 
             tool_count_object = [self.consecutive_tool_count]
             message = get_new_message(self.is_team_mode, tool_count_object, self.read_user_input)
