@@ -1,11 +1,15 @@
 import os
 import pickle
+import queue
 import sys
 
 from agent.util import log_error
 
 # Global conversation context
 _CONVERSATION_CONTEXT = None
+
+# Message queue for API requests
+_MESSAGE_QUEUE = queue.Queue()
 
 
 def get_conversation_context():
@@ -18,6 +22,28 @@ def set_conversation_context(context):
     """Function to set the global conversation context"""
     global _CONVERSATION_CONTEXT
     _CONVERSATION_CONTEXT = context
+
+
+def add_to_message_queue(message):
+    """Adds a message to the processing queue"""
+    _MESSAGE_QUEUE.put(message)
+    return True
+
+
+def get_from_message_queue(block=False) -> tuple:
+    """Gets a message from the queue if available"""
+    message_data = []
+    while not _MESSAGE_QUEUE.empty():
+        message_data.append(_MESSAGE_QUEUE.get(block=block))
+    if len(message_data) == 0:
+        return None, False
+    else:
+        return message_data, True
+
+
+def has_pending_messages():
+    """Checks if messages are available in the queue"""
+    return not _MESSAGE_QUEUE.empty()
 
 
 def cleanup_context():

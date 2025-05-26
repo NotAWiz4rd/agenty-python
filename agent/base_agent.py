@@ -1,23 +1,69 @@
 #!/usr/bin/env python3
-import json
-import os
 import sys
 
-from agent.context_handling import set_conversation_context, load_conversation
+from agent.context_handling import (set_conversation_context, load_conversation,
+                                    get_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
-from agent.tools.restart_program_tool import save_conv_and_restart
-from agent.tools_utils import get_tool_list, execute_tool
-from agent.util import check_for_agent_restart, get_user_message
+from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
+from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
+
+
+def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
+    if is_team_mode:
+        # check message queue for new messages
+        messages, has_api_message = get_from_message_queue(block=False)
+
+        if has_api_message:
+            consecutive_tool_count[0] = 0
+            # Process API message
+            print(f"\033[95mAPI-Request\033[0m: {messages}")
+            all_messages = ""
+            for message in messages:
+                all_messages += message + "\n"
+            return {"role": "user", "content": all_messages}
+
+        return {"role": "user", "content": "[Automated Message] There are currently no new messages. Please wait."}
+    else:
+        if read_user_input:
+            # prompt for user
+            try:
+                print(f"\033[94mYou\033[0m: ", end="", flush=True)
+                user_input, ok = get_user_message()
+            except KeyboardInterrupt:
+                # Let the atexit handler take care of deleting the context file
+                print("\nExiting program.")
+                sys.exit(0)
+            if not ok:
+                pass
+            # Reset consecutive tool count when user provides input
+            consecutive_tool_count[0] = 0
+            return {"role": "user", "content": user_input}
+
+    return None
 
 
 class Agent:
     def __init__(self, client, team_mode):
         self.client = client
         self.tools = get_tool_list(team_mode)
+        self.is_team_mode = team_mode
+        self.read_user_input = not team_mode  # initialise to True if not in team mode
         # Initialize counter for tracking consecutive tool calls without human interaction
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
+        self.group_chat_messages = []
+
+    def check_group_messages(self):
+        """Checks for new group chat messages and adds them to the message queue.
+        If there are no new messages, nothing happens.
+        """
+        new_messages = get_new_messages_from_group_chat(self.group_chat_messages)
+        self.group_chat_messages.extend(new_messages)
+        # Add new messages to the queue
+        for message in new_messages:
+            formatted_message = f"[Group Chat] {message['username']}: {message['message']}"
+            add_to_message_queue(formatted_message)
 
     def run(self):
         # Try to load saved conversation context
@@ -34,29 +80,22 @@ class Agent:
                     "role": "user",
                     "content": "The program has restarted and is continuing execution automatically. Please continue from where you left off."
                 })
+                self.read_user_input = False
         else:
             conversation = []
 
         # Set the global conversation context reference
         set_conversation_context(conversation)
 
-        read_user_input = not agent_initiated_restart
-
         while True:
-            if read_user_input:
-                # prompt for user
-                try:
-                    print(f"\033[94mYou\033[0m: ", end="", flush=True)
-                    user_input, ok = get_user_message()
-                except KeyboardInterrupt:
-                    # Let the atexit handler take care of deleting the context file
-                    print("\nExiting program.")
-                    sys.exit(0)
-                if not ok:
-                    break
-                conversation.append({"role": "user", "content": user_input})
-                # Reset consecutive tool count when user provides input
-                self.consecutive_tool_count = 0
+            # Check for new group messages at each cycle
+            self.check_group_messages()
+
+            tool_count_object = [self.consecutive_tool_count]
+            message = get_new_message(self.is_team_mode, tool_count_object, self.read_user_input)
+            self.consecutive_tool_count = tool_count_object[0]
+            if message is not None:
+                conversation.append(message)
 
             response = run_inference(conversation, self.client, self.tools, self.consecutive_tool_count,
                                      self.max_consecutive_tools)
@@ -82,7 +121,7 @@ class Agent:
                         "content": result
                     })
 
-            # 2) First, append the assistant’s own message (including its tool_use blocks!)
+            # 2) First, append the assistant's own message (including its tool_use blocks!)
             conversation.append({
                 "role": "assistant",
                 "content": [
@@ -101,48 +140,9 @@ class Agent:
                 ]
             })
 
-            # 3) If there were any tool calls, follow up with your tool_results as a user turn
+            # 3) If there were any tool calls, follow up with tool_results as a user turn
             if tool_results:
-                conversation.append({
-                    "role": "user",
-                    "content": tool_results
-                })
-                read_user_input = False
-
-                # detect “please restart” signals
-                for tr in tool_results:
-                    content = tr.get("content")
-                    payload = None
-
-                    # if it's already a dict, use it directly
-                    if isinstance(content, dict):
-                        payload = content
-                    # if it's a string, try parsing JSON
-                    elif isinstance(content, str):
-                        try:
-                            payload = json.loads(content)
-                            if not isinstance(payload, dict):
-                                # not a dict, skip
-                                payload = None
-                                continue
-                        except (json.JSONDecodeError, TypeError):
-                            # not JSON, skip
-                            continue
-                    # otherwise skip non‐dict, non‐str
-                    else:
-                        continue
-
-                    # if tool asked for restart
-                    if payload is not None and payload.get("restart"):
-                        # Check if this is a reset_context request (don't save context)
-                        if payload.get("reset_context"):
-                            # Just restart without saving
-                            # Set a flag to indicate we're intentionally restarting
-                            sys.is_restarting = True
-                            python = sys.executable
-                            os.execv(python, [python] + sys.argv)
-                        else:
-                            # Normal restart - save and restart
-                            save_conv_and_restart(conversation)
+                self.read_user_input = False
+                deal_with_tool_results(tool_results, conversation)
             else:
-                read_user_input = True
+                self.read_user_input = not self.is_team_mode
