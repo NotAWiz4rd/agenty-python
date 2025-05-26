@@ -1,3 +1,24 @@
+import json
+
+
+def remove_all_but_last_three_cache_controls(conversation):
+    number_of_cache_controls = 3
+    cache_control = """, \"cache_control\": {\"type\": \"ephemeral\"}"""
+    parts = json.dumps(conversation).split(cache_control)
+    print(parts)
+    count = len(parts) - 1  # number of occurrences
+    print(count)
+
+    if count <= number_of_cache_controls:
+        return conversation  # Nothing to remove
+
+    # Join: keep the target only for the last n occurrences
+    # The first (count - n) splits won't get the target re-inserted
+    first_part = ''.join(parts[:count - number_of_cache_controls + 1])
+    last_part = cache_control.join(parts[count - number_of_cache_controls + 1:])
+    return json.loads(first_part + last_part)
+
+
 def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_consecutive_tools=10):
     tools_param = []
     for t in tools:
@@ -20,6 +41,8 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_c
                 "name": "ask_human"
             }
             # We'll reset the counter when ask_human is actually executed
+
+    conversation = remove_all_but_last_three_cache_controls(conversation)
 
     return llm_client.messages.create(
         model="claude-sonnet-4-20250514",
