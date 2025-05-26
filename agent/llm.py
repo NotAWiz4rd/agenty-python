@@ -5,9 +5,7 @@ def remove_all_but_last_three_cache_controls(conversation):
     number_of_cache_controls = 3
     cache_control = """, \"cache_control\": {\"type\": \"ephemeral\"}"""
     parts = json.dumps(conversation).split(cache_control)
-    print(parts)
     count = len(parts) - 1  # number of occurrences
-    print(count)
 
     if count <= number_of_cache_controls:
         return conversation  # Nothing to remove
