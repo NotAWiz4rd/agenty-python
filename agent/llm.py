@@ -1,4 +1,4 @@
-def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_consecutive_tools = 10):
+def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_consecutive_tools=10):
     tools_param = []
     for t in tools:
         tools_param.append({
