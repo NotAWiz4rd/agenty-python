@@ -78,7 +78,11 @@ class Agent:
             if agent_initiated_restart:
                 conversation.append({
                     "role": "user",
-                    "content": "The program has restarted and is continuing execution automatically. Please continue from where you left off."
+                    "content": [{
+                        "type": "text",
+                        "text": "The program has restarted and is continuing execution automatically. Please continue from where you left off.",
+                        "cache_control": {"type": "ephemeral"}
+                    }]
                 })
                 self.read_user_input = False
         else:
@@ -134,7 +138,8 @@ class Agent:
                             "id": b.id,
                             "name": b.name,
                             "input": b.input
-                        })
+                        }),
+                        "cache_control": {"type": "ephemeral"}
                     }
                     for b in response.content
                 ]
