@@ -1,7 +1,6 @@
 # Register cleanup function to run on exit
 import atexit
 import sys
-import threading
 
 import anthropic
 
@@ -18,12 +17,8 @@ global_agent = Agent(client, TEAM_MODE)
 
 
 def main():
-    """Main function to start the agent and API server"""
-    # Start API server in the background
-    # todo add ability to set port via env var
-    api_thread = threading.Thread(target=start_api, daemon=True)
-    api_thread.start()
-    print(f"\033[92mAPI server has been started and is available at http://localhost:8000/\033[0m")
+    if TEAM_MODE:
+        start_api()
 
     atexit.register(cleanup_context)
 
