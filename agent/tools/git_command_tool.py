@@ -3,6 +3,7 @@
 import json
 import subprocess
 import shlex
+import os
 from agent.tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
@@ -18,6 +19,10 @@ GitCommandInputSchema = {
         "args": {
             "type": "string",
             "description": "Additional arguments for the git command (e.g., file paths for add, message for commit)"
+        },
+        "use_work_repo": {
+            "type": "boolean",
+            "description": "When set to TRUE we should use the work_repo directory, if FALSE we use current directory."
         }
     },
     "required": ["command"]
@@ -35,9 +40,26 @@ def git_command(input_data: dict) -> str:
 
     command = input_data.get("command", "")
     args = input_data.get("args", "")
+    use_work_repo = input_data.get("use_work_repo", True)
 
     if not command:
         raise ValueError("Git command cannot be empty")
+
+    # Determine the working directory
+    cwd = None
+    if use_work_repo:
+        current_dir = os.getcwd()
+        target_dir = os.path.join(current_dir, "work_repo")
+        
+        # Check if the specified directory exists
+        if not os.path.exists(target_dir):
+            result = {
+                "success": False,
+                "error": f"Working directory does not exist: {target_dir}"
+            }
+            return json.dumps(result)
+        
+        cwd = target_dir
 
     git_cmd = ["git", command]
     
@@ -50,7 +72,8 @@ def git_command(input_data: dict) -> str:
             git_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
+            cwd=cwd  # This sets the working directory for the command
         )
         stdout, stderr = process.communicate()
         
@@ -58,14 +81,16 @@ def git_command(input_data: dict) -> str:
             "success": process.returncode == 0,
             "stdout": stdout.strip(),
             "stderr": stderr.strip(),
-            "returncode": process.returncode
+            "returncode": process.returncode,
+            "use_work_repo": cwd if cwd else os.getcwd()
         }
         
         return json.dumps(result)
     except Exception as e:
         result = {
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "use_work_repo": cwd if cwd else os.getcwd()
         }
         return json.dumps(result)
 
@@ -75,7 +100,7 @@ def git_command(input_data: dict) -> str:
 # ------------------------------------------------------------------
 GitCommandDefinition = ToolDefinition(
     name="git_command",
-    description="Execute git commands like add, commit, status, etc.",
+    description="Execute git commands like add, commit, status, etc. Optionally specify a working_directory to run commands in subdirectories like 'work_repo'.",
     input_schema=GitCommandInputSchema,
     function=git_command
 )

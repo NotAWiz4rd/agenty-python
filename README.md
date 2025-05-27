@@ -21,7 +21,7 @@ and incorporate human feedback when needed.
 To start the AI agent system:
 
 1. Ensure all dependencies are installed
-2. If using a group-work-repository, create a local directory, initialise it with `git init`, and run the clone_repo.sh script to clone the repository
+2. If using a group-work-repository, create a local directory, initialise it with `git init`, run the git command `git config receive.denyCurrentBranch updateInstead` to allow push and run the clone_repo.sh script to clone the repository
 2. Provide an Anthropic API key in the `ANTHROPIC_API_KEY` environment variable
 3. Run the main program file `base_agent.py`
 4. Begin interacting with the agent through the provided interface
