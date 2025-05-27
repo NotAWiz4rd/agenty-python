@@ -22,7 +22,7 @@ GitCommandInputSchema = {
         },
         "use_work_repo": {
             "type": "boolean",
-            "description": "When set to TRUE we should use the work_repo directory, if FALSE we use current directory."
+            "description": "When set to TRUE we should use the work_repo directory, if FALSE we use current directory. Default is TRUE"
         }
     },
     "required": ["command"]
@@ -100,7 +100,7 @@ def git_command(input_data: dict) -> str:
 # ------------------------------------------------------------------
 GitCommandDefinition = ToolDefinition(
     name="git_command",
-    description="Execute git commands like add, commit, status, etc. Optionally specify a working_directory to run commands in subdirectories like 'work_repo'.",
+    description="Executes git commands such as add, commit, status, push, pull, etc. The optional parameter 'use_work_repo' (default: true) determines whether the command runs in the predefined 'work_repo' directory or in the current directory. The output includes stdout, stderr, and success status.",
     input_schema=GitCommandInputSchema,
     function=git_command
 )
