@@ -1,5 +1,10 @@
 import json
 
+from agent.team_config_loader import get_current_agent_name
+
+agent_name = get_current_agent_name()
+system_prompt = f"You are {agent_name}, an AI assistant working as part of a team of agents. Always identify yourself as {agent_name} when communicating with other agents or humans. Your responses should be helpful, harmless, and honest."
+
 
 def remove_all_but_last_three_cache_controls(conversation):
     number_of_cache_controls = 3
@@ -42,10 +47,14 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_c
 
     conversation = remove_all_but_last_three_cache_controls(conversation)
 
+    # Filter out any existing 'system' role messages to prevent API errors
+    filtered_conversation = [msg for msg in conversation if msg.get("role") != "system"]
+
     return llm_client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=4000,
-        messages=conversation,
+        system=system_prompt,  # Pass system prompt as a top-level parameter
+        messages=filtered_conversation,
         tool_choice=tool_choice,
         tools=tools_param
     )

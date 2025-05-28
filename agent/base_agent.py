@@ -6,6 +6,7 @@ from agent.context_handling import (set_conversation_context, load_conversation,
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
+from agent.team_config_loader import get_current_agent_name
 
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
@@ -43,7 +44,7 @@ def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_
 
 
 class Agent:
-    def __init__(self, client, team_mode):
+    def __init__(self, client, team_mode, team_config=None):
         self.client = client
         self.tools = get_tool_list(team_mode)
         self.is_team_mode = team_mode
@@ -53,6 +54,10 @@ class Agent:
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
         self.group_chat_messages = []
+        # Store the team configuration
+        self.team_config = team_config
+        # Set the agent's name based on the team configuration
+        self.name = get_current_agent_name() or "Claude"
 
     def check_group_messages(self):
         """Checks for new group chat messages and adds them to the message queue.
@@ -109,7 +114,7 @@ class Agent:
             # print assistant text and collect any tool calls
             for block in response.content:
                 if block.type == "text":
-                    print(f"\033[93mClaude\033[0m: {block.text}")
+                    print(f"\033[93m{self.name}\033[0m: {block.text}")
                 elif block.type == "tool_use":
                     # If the tool is ask_human, reset counter before executing
                     if block.name == "ask_human":

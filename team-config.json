@@ -1,0 +1,16 @@
+{
+  "agents": [
+    {
+      "name": "Malte",
+      "host": "http://0.0.0.0",
+      "port": 8001,
+      "isCurrentAgent": true
+    },
+    {
+      "name": "John",
+      "host": "http://0.0.0.0",
+      "port": 8002,
+      "isCurrentAgent": false
+    }
+  ]
+}
