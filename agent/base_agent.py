@@ -6,7 +6,49 @@ from agent.context_handling import (set_conversation_context, load_conversation,
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
+import datetime
+import requests
+from typing import List, Dict, Any
 
+def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], step_count: int):
+    """
+    Sends a work log to the Group Work Log Service.
+
+    Args:
+        agent_id: The ID of the agent
+        conversation: The current conversation
+        step_count: The number of steps since the last log
+    """
+    now = datetime.datetime.utcnow().isoformat()
+
+    # Determine the timestamp of the first message or use current time
+    first_timestamp = now
+    if conversation and len(conversation) > 0:
+        # TODO: add timestamps to conversation ?
+        # We could extract an actual timestamp from the conversation here,
+        # if available. For now, we'll just use the current time.
+        pass
+
+    # Prepare the request payload
+    payload = {
+        "agent_id": agent_id,
+        "first_timestamp": first_timestamp,
+        "last_timestamp": now,
+        "conversation": conversation
+    }
+
+    try:
+        # Send the request to the Group Work Log Service
+        response = requests.post("http://localhost:8082/submit-worklog", json=payload)
+        if response.status_code == 200:
+            print(f"\033[92mWork log successfully sent\033[0m")
+            return True
+        else:
+            print(f"\033[91mError sending work log: {response.status_code}\033[0m")
+            return False
+    except Exception as e:
+        print(f"\033[91mError sending work log: {str(e)}\033[0m")
+        return False
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
     if is_team_mode:
@@ -53,6 +95,18 @@ class Agent:
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
         self.group_chat_messages = []
+
+        # For work log tracking
+        self.agent_id = f"agent-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}" # TODO: Replace with actual agent ID logic
+        self.steps_since_last_log = 0
+        self.log_every_n_steps = 10  # Default: Send log every 10 steps
+
+    def check_and_send_work_log(self, conversation):
+        """Checks if a work log should be sent and sends it if necessary."""
+        if self.steps_since_last_log >= self.log_every_n_steps:
+            success = send_work_log(self.agent_id, conversation, self.steps_since_last_log)
+            if success:
+                self.steps_since_last_log = 0
 
     def check_group_messages(self):
         """Checks for new group chat messages and adds them to the message queue.
@@ -152,3 +206,9 @@ class Agent:
                 deal_with_tool_results(tool_results, conversation)
             else:
                 self.read_user_input = not self.is_team_mode
+
+            # Count a step
+            self.steps_since_last_log += 1
+
+            # Check if a work log should be sent
+            self.check_and_send_work_log(conversation)

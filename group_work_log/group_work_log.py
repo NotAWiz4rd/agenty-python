@@ -38,25 +38,51 @@ def load_summaries():
     print("Loading existing summaries...")
     try:
         with open(SUMMARY_FILE, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip().startswith("==="):
-                    # New summary blocks start with "=== AGENT:"
-                    summary_text = line
-                    # Extract agent ID
-                    agent_id = line.strip().split("===")[1].strip().split(":")[1].strip()
-                    agents = [agent_id]
-                    # Extract timestamp from the file (assuming it's in the format "TIMESTAMP: <ISO8601>")
-                    timestamp_line = next(f).strip()  # Read the next line for the timestamp
-                    if timestamp_line.startswith("TIMESTAMP:"):
-                        timestamp = timestamp_line.split("TIMESTAMP:")[1].strip()
-                    else:
-                        raise ValueError("Missing or malformed timestamp in summary file.")
+            summary_text = ""
+            current_agents = []
+            current_timestamp = None
 
-                    summaries.append(WorklogSummary(
-                        timestamp=timestamp,
-                        agents=agents,
-                        summary=summary_text
-                    ))
+            for line in f:
+                line = line.strip()
+
+                if line.startswith("=== AGENT:"):
+                    # New summary block starts
+                    if summary_text and current_timestamp:
+                        # Save previous summary if exists
+                        summaries.append(WorklogSummary(
+                            timestamp=current_timestamp,
+                            agents=current_agents,
+                            summary=summary_text
+                        ))
+
+                    # Reset for new summary
+                    summary_text = line + "\n"
+                    agent_id = line.split("===")[1].strip().split(":")[1].strip()
+                    current_agents = [agent_id]
+                    current_timestamp = None
+
+                elif line.startswith("TIMESPAN:"):
+                    # Extract the timestamp from the TIMESPAN line
+                    summary_text += line + "\n"
+                    # Use the last_timestamp as our timestamp for the summary
+                    timespan_parts = line.split("TIMESPAN:")[1].strip().split("to")
+                    if len(timespan_parts) >= 2:
+                        current_timestamp = timespan_parts[1].strip()
+                    else:
+                        current_timestamp = datetime.utcnow().isoformat()
+
+                else:
+                    # Continue building the current summary
+                    summary_text += line + "\n"
+
+            # Don't forget to add the last summary if file doesn't end with a blank line
+            if summary_text and current_timestamp:
+                summaries.append(WorklogSummary(
+                    timestamp=current_timestamp,
+                    agents=current_agents,
+                    summary=summary_text
+                ))
+
     except FileNotFoundError:
         # File doesn't exist yet, which is fine
         pass
