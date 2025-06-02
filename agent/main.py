@@ -22,7 +22,7 @@ global_agent = Agent(client, TEAM_MODE, TEAM_CONFIG)
 
 def main():
     if TEAM_MODE:
-        start_api()
+        start_api(TEAM_CONFIG.current_agent)
 
     atexit.register(cleanup_context)
 
