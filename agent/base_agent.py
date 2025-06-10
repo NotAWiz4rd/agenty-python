@@ -10,7 +10,7 @@ import datetime
 import requests
 from typing import List, Dict, Any
 
-def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], step_count: int):
+def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], step_count: int, first_timestamp: str, last_timestamp: str):
     """
     Sends a work log to the Group Work Log Service.
 
@@ -18,11 +18,9 @@ def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], step_count:
         agent_id: The ID of the agent
         conversation: The current conversation
         step_count: The number of steps since the last log
+        last_timestamp: The timestamp of the last log
+        first_timestamp: The timestamp of the first log in this session
     """
-    now = datetime.datetime.utcnow().isoformat()
-
-    # Determine the timestamp of the first message or use current time
-    first_timestamp = now
     if conversation and len(conversation) > 0:
         # TODO: add timestamps to conversation ?
         # We could extract an actual timestamp from the conversation here,
@@ -33,7 +31,7 @@ def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], step_count:
     payload = {
         "agent_id": agent_id,
         "first_timestamp": first_timestamp,
-        "last_timestamp": now,
+        "last_timestamp": last_timestamp,
         "conversation": conversation
     }
 
@@ -96,6 +94,7 @@ class Agent:
         self.max_consecutive_tools = 10
         self.group_chat_messages = []
         self.last_logged_index = 0 # Last index of the group chat messages that were logged
+        self.last_log_time = datetime.datetime.utcnow().isoformat() # Last time a log was sent
 
         # For work log tracking
         self.agent_id = f"agent-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}" # TODO: Replace with actual agent ID logic
@@ -107,10 +106,13 @@ class Agent:
         if self.steps_since_last_log >= self.log_every_n_steps:
             # Check if there are new messages since the last log
             new_messages = conversation[self.last_logged_index:]
-            success = send_work_log(self.agent_id, new_messages, self.steps_since_last_log)
+            first_timestamp = self.last_log_time
+            last_timestamp = datetime.datetime.utcnow().isoformat()
+            success = send_work_log(self.agent_id, new_messages, self.steps_since_last_log, first_timestamp, last_timestamp)
             if success:
                 self.steps_since_last_log = 0
                 self.last_logged_index = len(conversation)
+                self.last_log_time = last_timestamp
 
     def check_group_messages(self):
         """Checks for new group chat messages and adds them to the message queue.
