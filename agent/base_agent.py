@@ -10,7 +10,7 @@ import datetime
 import requests
 from typing import List, Dict, Any
 
-def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], step_count: int, first_timestamp: str, last_timestamp: str):
+def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], first_timestamp: str, last_timestamp: str):
     """
     Sends a work log to the Group Work Log Service.
 
