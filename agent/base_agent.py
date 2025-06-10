@@ -95,6 +95,7 @@ class Agent:
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
         self.group_chat_messages = []
+        self.last_logged_index = 0 # Last index of the group chat messages that were logged
 
         # For work log tracking
         self.agent_id = f"agent-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}" # TODO: Replace with actual agent ID logic
@@ -104,9 +105,12 @@ class Agent:
     def check_and_send_work_log(self, conversation):
         """Checks if a work log should be sent and sends it if necessary."""
         if self.steps_since_last_log >= self.log_every_n_steps:
-            success = send_work_log(self.agent_id, conversation, self.steps_since_last_log)
+            # Check if there are new messages since the last log
+            new_messages = conversation[self.last_logged_index:]
+            success = send_work_log(self.agent_id, new_messages, self.steps_since_last_log)
             if success:
                 self.steps_since_last_log = 0
+                self.last_logged_index = len(conversation)
 
     def check_group_messages(self):
         """Checks for new group chat messages and adds them to the message queue.
