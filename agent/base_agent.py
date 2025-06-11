@@ -1,51 +1,13 @@
 #!/usr/bin/env python3
 import sys
 
+from agent.agent_work_log import send_work_log
 from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
 import datetime
-import requests
-from typing import List, Dict, Any
-
-def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], first_timestamp: str, last_timestamp: str):
-    """
-    Sends a work log to the Group Work Log Service.
-
-    Args:
-        agent_id: The ID of the agent
-        conversation: The current conversation
-        last_timestamp: The timestamp of the last log
-        first_timestamp: The timestamp of the first log in this session
-    """
-    if conversation and len(conversation) > 0:
-        # TODO: add timestamps to conversation ?
-        # We could extract an actual timestamp from the conversation here,
-        # if available. For now, we'll just use the current time.
-        pass
-
-    # Prepare the request payload
-    payload = {
-        "agent_id": agent_id,
-        "first_timestamp": first_timestamp,
-        "last_timestamp": last_timestamp,
-        "conversation": conversation
-    }
-
-    try:
-        # Send the request to the Group Work Log Service
-        response = requests.post("http://localhost:8082/submit-worklog", json=payload)
-        if response.status_code == 200:
-            print(f"\033[92mWork log successfully sent\033[0m")
-            return True
-        else:
-            print(f"\033[91mError sending work log: {response.status_code}\033[0m")
-            return False
-    except Exception as e:
-        print(f"\033[91mError sending work log: {str(e)}\033[0m")
-        return False
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
     if is_team_mode:
