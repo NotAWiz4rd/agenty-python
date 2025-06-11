@@ -20,7 +20,7 @@ class WorklogRequest(BaseModel):
     agent_id: str
     first_timestamp: str
     last_timestamp: str
-    conversation: List[Dict[str, Any]]
+    messages: List[Dict[str, Any]]
 
 
 class WorklogSummary(BaseModel):
@@ -88,11 +88,11 @@ def load_summaries():
         pass
 
 
-def extract_assistant_actions(conversation: List[Dict[str, Any]]) -> str:
-    """Extracts all assistant actions from the conversation"""
+def extract_assistant_actions(messages: List[Dict[str, Any]]) -> str:
+    """Extracts all assistant actions from the messages"""
     assistant_msgs = []
 
-    for msg in conversation:
+    for msg in messages:
         content = msg.get("content", [])
 
         # Content can be a list of blocks or simple text
@@ -111,10 +111,10 @@ def extract_assistant_actions(conversation: List[Dict[str, Any]]) -> str:
     return "\n\n".join(assistant_msgs)
 
 
-def summarize_worklog(agent_id: str, conversation: List[Dict[str, Any]],
+def summarize_worklog(agent_id: str, messages: List[Dict[str, Any]],
                       first_timestamp: str, last_timestamp: str) -> str:
-    """Creates a summary of assistant actions in the conversation"""
-    assistant_actions = extract_assistant_actions(conversation)
+    """Creates a summary of assistant actions in the messages"""
+    assistant_actions = extract_assistant_actions(messages)
 
     if not assistant_actions:
         return f"=== AGENT: {agent_id} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nNo assistant activity found."
@@ -147,7 +147,7 @@ def summarize_worklog(agent_id: str, conversation: List[Dict[str, Any]],
         agent_summary = response.content[0].text  # type: ignore
 
         # Count assistant messages
-        step_count = sum(1 for msg in conversation if msg.get("role") == "assistant")
+        step_count = sum(1 for msg in messages if msg.get("role") == "assistant")
 
         # Summary format with provided timestamps
         final_summary = f"=== AGENT: {agent_id} ===\n"
@@ -169,20 +169,20 @@ async def submit_worklog(request: WorklogRequest):
     agent_id = request.agent_id
     first_timestamp = request.first_timestamp
     last_timestamp = request.last_timestamp
-    conversation = request.conversation
+    messages = request.messages
 
     if not agent_id:
         raise HTTPException(status_code=400, detail="Missing required field: agent_id")
 
-    if not conversation:
-        raise HTTPException(status_code=400, detail="Empty conversation provided")
+    if not messages:
+        raise HTTPException(status_code=400, detail="Empty messages provided")
 
     now = datetime.utcnow().isoformat()
     response = {"status": "ok"}
 
     with lock:
         # Create summary
-        summary_text = summarize_worklog(agent_id, conversation, first_timestamp, last_timestamp)
+        summary_text = summarize_worklog(agent_id, messages, first_timestamp, last_timestamp)
 
         # Store summary
         summary = WorklogSummary(
