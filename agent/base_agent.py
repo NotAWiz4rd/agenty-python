@@ -17,7 +17,6 @@ def send_work_log(agent_id: str, conversation: List[Dict[str, Any]], first_times
     Args:
         agent_id: The ID of the agent
         conversation: The current conversation
-        step_count: The number of steps since the last log
         last_timestamp: The timestamp of the last log
         first_timestamp: The timestamp of the first log in this session
     """
@@ -108,7 +107,7 @@ class Agent:
             new_messages = conversation[self.last_logged_index:]
             first_timestamp = self.last_log_time
             last_timestamp = datetime.datetime.utcnow().isoformat()
-            success = send_work_log(self.agent_id, new_messages, self.steps_since_last_log, first_timestamp, last_timestamp)
+            success = send_work_log(self.agent_id, new_messages, first_timestamp, last_timestamp)
             if success:
                 self.steps_since_last_log = 0
                 self.last_logged_index = len(conversation)
