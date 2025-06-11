@@ -12,7 +12,7 @@ class WorklogRequest(BaseModel):
     agent_id: str
     first_timestamp: str
     last_timestamp: str
-    new_messages: List[Dict[str, Any]]
+    messages: List[Dict[str, Any]]
 
 def send_work_log(agent_id: str, new_messages: List[Dict[str, Any]], first_timestamp: str, last_timestamp: str):
     """
@@ -30,7 +30,7 @@ def send_work_log(agent_id: str, new_messages: List[Dict[str, Any]], first_times
         agent_id=agent_id,
         first_timestamp=first_timestamp,
         last_timestamp=last_timestamp,
-        new_messages=new_messages
+        messages=new_messages
     )
 
     try:
