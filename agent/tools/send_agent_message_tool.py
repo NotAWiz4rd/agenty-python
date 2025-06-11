@@ -5,7 +5,7 @@ import json
 import requests
 
 from agent.tools.base_tool import ToolDefinition
-from agent.team_config_loader import load_team_config
+from agent.team_config_loader import _get_cached_team_config
 
 # ------------------------------------------------------------------
 # Input‐schema for the send_agent_message tool
@@ -34,7 +34,7 @@ def get_agent_endpoints():
     """
     Get agent endpoints dynamically from team-config.json
     """
-    team_config = load_team_config()
+    team_config = _get_cached_team_config()
     endpoints = {}
 
     for agent in team_config.agents:

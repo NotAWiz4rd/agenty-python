@@ -45,8 +45,8 @@ def start_uvicorn_app(host: str, port: int):
     uvicorn.run(app, host=host, port=port)
 
 
-def start_api(team_config: AgentConfig):
+def start_api(agent_config: AgentConfig):
     """Start the API server in the background"""
-    api_thread = threading.Thread(target=start_uvicorn_app,args=(team_config.host, team_config.port), daemon=True)
+    api_thread = threading.Thread(target=start_uvicorn_app, args=(agent_config.host, agent_config.port), daemon=True)
     api_thread.start()
-    print(f"\033[92mAPI server has been started and is available at http://{team_config.host}:{team_config.port}/\033[0m")
+    print(f"\033[92mAPI server has been started and is available at{agent_config.host}:{agent_config.port}/\033[0m")

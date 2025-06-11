@@ -4,6 +4,9 @@ import os
 from typing import List, Optional
 
 
+# Cache for the team configuration to avoid reloading it multiple times
+_TEAM_CONFIG_CACHE = None
+
 class AgentConfig:
     def __init__(self, name: str, host: str, port: int, is_current_agent: bool):
         self.name = name
@@ -13,13 +16,12 @@ class AgentConfig:
 
 
 class TeamConfig:
-    def __init__(self, agents: List[AgentConfig], current_agent: Optional[AgentConfig] = None):
+    def __init__(self, agents: List[AgentConfig]):
         self.agents = agents
-        # Set current_agent to the agent with isCurrentAgent=True, or None if not found
-        self.current_agent = current_agent or next((agent for agent in agents if agent.is_current_agent), None)
 
-    def get(self, param, param1):
-        pass
+    def get_current_agent(self) -> Optional[AgentConfig]:
+        """Returns the agent marked as current agent, or None if not found."""
+        return next((agent for agent in self.agents if agent.is_current_agent), None)
 
 
 def load_team_config(config_path: str = None) -> TeamConfig:
@@ -44,7 +46,6 @@ def load_team_config(config_path: str = None) -> TeamConfig:
 
         # Parse agent configurations
         agent_configs = []
-        current_agent = None
 
         for agent_data in config_data.get('agents', []):
             agent = AgentConfig(
@@ -55,15 +56,26 @@ def load_team_config(config_path: str = None) -> TeamConfig:
             )
             agent_configs.append(agent)
 
-            if agent.is_current_agent:
-                current_agent = agent
-
-        return TeamConfig(agent_configs, current_agent)
+        return TeamConfig(agent_configs)
 
     except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
         print(f"Error loading team configuration: {e}")
         # Return an empty configuration if the file cannot be loaded
         return TeamConfig([])
+
+
+
+def _get_cached_team_config() -> TeamConfig:
+    """
+    Loads the team configuration and stores it in the cache.
+
+    Returns:
+        The TeamConfig, either from the cache or newly loaded.
+    """
+    global _TEAM_CONFIG_CACHE
+    if _TEAM_CONFIG_CACHE is None:
+        _TEAM_CONFIG_CACHE = load_team_config()
+    return _TEAM_CONFIG_CACHE
 
 
 def get_current_agent_name() -> Optional[str]:
@@ -73,10 +85,11 @@ def get_current_agent_name() -> Optional[str]:
     Returns:
         The name of the current agent, or None if not found.
     """
-    config = load_team_config()
-    if config.current_agent:
-        return config.current_agent.name
-    return None
+    config = _get_cached_team_config()
+    current_agent = config.get_current_agent()
+    if current_agent:
+        return current_agent.name
+    return "Claude" # Default name if not found
 
 
 def get_current_agent_port() -> int:
@@ -86,7 +99,28 @@ def get_current_agent_port() -> int:
     Returns:
         The port of the current agent, or 8000 if not found.
     """
-    config = load_team_config()
-    if config.current_agent:
-        return config.current_agent.port
+    config = _get_cached_team_config()
+    current_agent = config.get_current_agent()
+    if current_agent:
+        return current_agent.port
     return 8000
+
+
+def is_team_mode() -> bool:
+    """
+    Checks if the application is running in team mode (multiple agents).
+
+    Returns:
+        True if multiple agents are defined in the configuration, False otherwise.
+    """
+    config = _get_cached_team_config()
+    return len(config.agents) > 1
+
+
+def clear_config_cache():
+    """
+    Clears the configuration cache to force reloading of the configuration.
+    Useful for testing or when the configuration may change during runtime.
+    """
+    global _TEAM_CONFIG_CACHE
+    _TEAM_CONFIG_CACHE = None

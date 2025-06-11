@@ -7,14 +7,14 @@ import anthropic
 from agent.api import start_api
 from agent.base_agent import Agent
 from agent.context_handling import (cleanup_context)
-from agent.team_config_loader import load_team_config
+from agent.team_config_loader import _get_cached_team_config, is_team_mode
 from agent.util import log_error
 
 
 # Load team configuration
-TEAM_CONFIG = load_team_config()
+TEAM_CONFIG = _get_cached_team_config()
 # Set team mode to True only if multiple agents are defined in the configuration
-TEAM_MODE = len(TEAM_CONFIG.agents) > 1
+TEAM_MODE = is_team_mode()
 
 client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
 global_agent = Agent(client, TEAM_MODE, TEAM_CONFIG)
@@ -22,7 +22,7 @@ global_agent = Agent(client, TEAM_MODE, TEAM_CONFIG)
 
 def main():
     if TEAM_MODE:
-        start_api(TEAM_CONFIG.current_agent)
+        start_api(TEAM_CONFIG.get_current_agent())
 
     atexit.register(cleanup_context)
 

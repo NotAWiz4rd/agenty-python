@@ -57,7 +57,7 @@ class Agent:
         # Store the team configuration
         self.team_config = team_config
         # Set the agent's name based on the team configuration
-        self.name = get_current_agent_name() or "Claude"
+        self.name = get_current_agent_name()
 
     def check_group_messages(self):
         """Checks for new group chat messages and adds them to the message queue.

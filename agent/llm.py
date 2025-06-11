@@ -1,9 +1,12 @@
 import json
 
-from agent.team_config_loader import get_current_agent_name
+from agent.team_config_loader import get_current_agent_name, is_team_mode
 
 agent_name = get_current_agent_name()
-system_prompt = f"You are {agent_name}, an AI assistant working as part of a team of agents. Always identify yourself as {agent_name} when communicating with other agents or humans. Your responses should be helpful, harmless, and honest."
+if is_team_mode():
+    system_prompt = f"You are {agent_name}, an AI assistant working as part of a team of agents. Always identify yourself as {agent_name} when communicating with other agents or humans. Your responses should be helpful, harmless, and honest."
+else:
+    system_prompt = "You are an AI assistant. Your responses should be helpful, harmless, and honest."
 
 
 def remove_all_but_last_three_cache_controls(conversation):
