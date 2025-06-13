@@ -25,6 +25,9 @@ def check_activity(activity: str):
     # if activity is actually suspicious with a high severity level, send a message to a human
     # possibly find a way to shut down the team that doesn't involve calling an API of the agent itself
     response = send_activity_to_llm(activity)
+    if not response.content:
+        print("Error: LLM response content is empty. Unable to determine severity level.")
+        return
     severity_level = extract_severity_level(response.content[0].text)
 
     if severity_level in ["CRITICAL", "HIGH", "MEDIUM"]:
