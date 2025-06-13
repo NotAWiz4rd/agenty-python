@@ -1,6 +1,7 @@
 # report_suspicious_activity_tool.py
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -17,6 +18,8 @@ class SuspiciousActivityReport(BaseModel):
     involved_parties: str
     report_id: str
 
+
+OVERSIGHT_API_BASE_URL = os.getenv("OVERSIGHT_API_BASE_URL") or "http://0.0.0.0:8083"
 
 # ------------------------------------------------------------------
 # Input schema for the report_suspicious_activity tool
@@ -60,8 +63,7 @@ def report_suspicious_activity(input_data: dict) -> str:
                                               involved_parties=involved_parties,
                                               report_id=f"SUSP_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
-    # todo make this configurable
-    oversight_api_url = "http://0.0.0.0:8083/oversight/report-activity"
+    oversight_api_url = f"{OVERSIGHT_API_BASE_URL}/oversight/report-activity"
 
     try:
         # Log the report locally for audit trail
