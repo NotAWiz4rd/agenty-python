@@ -279,7 +279,7 @@ class SaveSystem:
         else:
             return str(obj)
     
-    def get_save_files(self) -> List[Dict[str, Any]]:
+    def get_save_files(self) -> list[Dict[str, Any]]:
         """Get list of available save files."""
         save_files = []
         

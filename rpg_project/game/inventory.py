@@ -574,4 +574,3 @@ class InventorySystem:
                 return True
         
         return False
-            character.inventory.sort(key=lambda item: item.quantity, reverse=True)
