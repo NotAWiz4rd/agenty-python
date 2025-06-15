@@ -1,0 +1,1 @@
+# Utils package for The Shattered Realms RPG
