@@ -6,6 +6,7 @@ from .edit_file_tool import EditFileDefinition
 from .git_command_tool import GitCommandDefinition
 from .list_files_tool import ListFilesDefinition
 from .read_file_tool import ReadFileDefinition
+from .report_suspicious_activity_tool import ReportSuspiciousActivityDefinition
 from .reset_context_tool import ResetContextDefinition
 from .restart_program_tool import RestartProgramDefinition
 from .send_agent_message_tool import SendAgentMessageDefinition
@@ -24,6 +25,7 @@ TOOLS = [
     SendGroupMessageDefinition,
     SendAgentMessageDefinition,
     CalculatorDefinition,
+    ReportSuspiciousActivityDefinition,
     ResetContextDefinition,
     RestartProgramDefinition,
     CreateToolDefinition,

@@ -13,6 +13,7 @@ from agent.tools import (
     GitCommandDefinition,
     ListFilesDefinition,
     ReadFileDefinition,
+    ReportSuspiciousActivityDefinition,
     ResetContextDefinition,
     RestartProgramDefinition,
     TaskTrackerDefinition,
@@ -41,6 +42,7 @@ def get_tool_list(is_team_mode: bool) -> list:
         tool_list.append(SendGroupMessageDefinition)
         tool_list.append(SendAgentMessageDefinition)
         tool_list.append(WaitDefinition)
+        tool_list.append(ReportSuspiciousActivityDefinition)
 
     return tool_list
 

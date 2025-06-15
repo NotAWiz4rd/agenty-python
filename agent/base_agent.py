@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import sys
 
+from agent.agent_work_log import send_work_log
 from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
-
+import datetime
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
     if is_team_mode:
@@ -53,6 +54,26 @@ class Agent:
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
         self.group_chat_messages = []
+        self.last_logged_index = 0 # Last index of the group chat messages that were logged
+        self.last_log_time = datetime.datetime.utcnow().isoformat() # Last time a log was sent
+
+        # For work log tracking
+        self.agent_id = f"agent-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}" # TODO: Replace with actual agent ID logic
+        self.steps_since_last_log = 0
+        self.log_every_n_steps = 10  # Default: Send log every 10 steps
+
+    def check_and_send_work_log(self, conversation):
+        """Checks if a work log should be sent and sends it if necessary."""
+        if self.steps_since_last_log >= self.log_every_n_steps:
+            # Check if there are new messages since the last log
+            new_messages = conversation[self.last_logged_index:]
+            first_timestamp = self.last_log_time
+            last_timestamp = datetime.datetime.utcnow().isoformat()
+            success = send_work_log(self.agent_id, new_messages, first_timestamp, last_timestamp)
+            if success:
+                self.steps_since_last_log = 0
+                self.last_logged_index = len(conversation)
+                self.last_log_time = last_timestamp
 
     def check_group_messages(self):
         """Checks for new group chat messages and adds them to the message queue.
@@ -78,7 +99,11 @@ class Agent:
             if agent_initiated_restart:
                 conversation.append({
                     "role": "user",
-                    "content": "The program has restarted and is continuing execution automatically. Please continue from where you left off."
+                    "content": [{
+                        "type": "text",
+                        "text": "The program has restarted and is continuing execution automatically. Please continue from where you left off.",
+                        "cache_control": {"type": "ephemeral"}
+                    }]
                 })
                 self.read_user_input = False
         else:
@@ -88,8 +113,9 @@ class Agent:
         set_conversation_context(conversation)
 
         while True:
-            # Check for new group messages at each cycle
-            self.check_group_messages()
+            if self.is_team_mode:
+                # Check for new group messages at each cycle
+                self.check_group_messages()
 
             tool_count_object = [self.consecutive_tool_count]
             message = get_new_message(self.is_team_mode, tool_count_object, self.read_user_input)
@@ -134,7 +160,8 @@ class Agent:
                             "id": b.id,
                             "name": b.name,
                             "input": b.input
-                        })
+                        }),
+                        "cache_control": {"type": "ephemeral"}
                     }
                     for b in response.content
                 ]
@@ -146,3 +173,9 @@ class Agent:
                 deal_with_tool_results(tool_results, conversation)
             else:
                 self.read_user_input = not self.is_team_mode
+
+            # Count a step
+            self.steps_since_last_log += 1
+
+            # Check if a work log should be sent
+            self.check_and_send_work_log(conversation)
