@@ -88,6 +88,9 @@ class GameEngine:
         self.game_state.set_flag("game_started", True)
         self.game_state.set_flag("prologue_complete", False)
         
+        # Initialize quest system with starting quests
+        self.quest_system.auto_start_quests(self.game_state)
+        
         # Start main game loop
         self.show_prologue()
         self.main_game_loop()
@@ -174,43 +177,47 @@ class GameEngine:
         player = self.game_state.player
         
         # Common starting items
-        common_items = [
-            Item("Travel Pack", "item", "A sturdy pack for carrying supplies.", 1),
-            Item("Basic Rations", "consumable", "Simple food that keeps well.", 3),
-            Item("Water Flask", "item", "A flask of clean water.", 1),
-            Item("Flint and Steel", "item", "For starting fires.", 1),
+        common_item_ids = [
+            "travel_pack",
+            "basic_rations", 
+            "water_flask",
+            "flint_steel",
         ]
         
         # Background-specific items
         if background_choice == 1:  # Scholar
-            specific_items = [
-                Item("Scholar's Robes", "armor", "Simple robes that aid concentration.", 1),
-                Item("Crystal Analysis Kit", "item", "Tools for studying crystals safely.", 1),
-                Item("Ancient Map Fragment", "quest", "A fragment of an old map.", 1),
+            specific_item_ids = [
+                "scholars_robes",
+                "crystal_analysis_kit",
+                "ancient_map",
             ]
         elif background_choice == 2:  # Warrior
-            specific_items = [
-                Item("Iron Sword", "weapon", "A reliable iron blade.", 1),
-                Item("Leather Armor", "armor", "Sturdy leather protection.", 1),
-                Item("Shield", "item", "A wooden shield reinforced with metal.", 1),
+            specific_item_ids = [
+                "iron_sword",
+                "leather_armor",
+                "shield",
             ]
         elif background_choice == 3:  # Diplomat
-            specific_items = [
-                Item("Fine Clothes", "armor", "Well-made clothes that impress.", 1),
-                Item("Signet Ring", "accessory", "A ring showing noble connections.", 1),
-                Item("Letter of Introduction", "quest", "A letter from a minor noble.", 1),
+            specific_item_ids = [
+                "fine_clothes",
+                "signet_ring",
+                "letter_intro",
             ]
         else:  # Survivor
-            specific_items = [
-                Item("Survival Knife", "weapon", "A versatile tool and weapon.", 1),
-                Item("Patched Cloak", "armor", "A well-worn but serviceable cloak.", 1),
-                Item("Emergency Supplies", "consumable", "Extra supplies for tough times.", 2),
+            specific_item_ids = [
+                "survival_knife",
+                "patched_cloak",
+                "emergency_supplies",
             ]
         
-        # Add items to inventory
-        all_items = common_items + specific_items
-        for item in all_items:
-            self.inventory_system.add_item(player, item)
+        # Add items to inventory using inventory system
+        all_item_ids = common_item_ids + specific_item_ids
+        for item_id in all_item_ids:
+            item = self.inventory_system.create_item(item_id)
+            if item:
+                self.inventory_system.add_item(player, item)
+            else:
+                print(f"Warning: Could not create item {item_id}")
     
     def initialize_world(self):
         """Initialize the game world."""
@@ -341,7 +348,13 @@ class GameEngine:
         actions.extend(location.available_actions)
         
         # Add system actions
-        actions.extend(["save", "quit"])
+        actions.extend(["quests", "save", "quit"])
+        
+        # Add item actions if player has items
+        if self.game_state.player.inventory:
+            actions.append("use [item]")
+            actions.append("equip [item]")
+            actions.append("drop [item]")
         
         return actions
     
@@ -401,6 +414,17 @@ class GameEngine:
         elif action.startswith("talk "):
             npc_name = action[5:]
             self.talk_to_npc(npc_name)
+        elif action == "quests":
+            self.show_quest_log()
+        elif action.startswith("use "):
+            item_name = action[4:]
+            self.use_item(item_name)
+        elif action.startswith("equip "):
+            item_name = action[6:]
+            self.equip_item(item_name)
+        elif action.startswith("drop "):
+            item_name = action[5:]
+            self.drop_item(item_name)
         elif action == "save":
             self.save_game()
         elif action == "quit":
@@ -474,6 +498,10 @@ class GameEngine:
             self.game_state.current_location = new_location
             self.game_state.advance_time()
             
+            # Trigger quest events
+            self.quest_system.trigger_event(self.game_state, "location_visited", 
+                                          {"location_id": new_location_id})
+            
             # Trigger location events
             if hasattr(new_location, 'on_enter'):
                 new_location.on_enter(self.game_state)
@@ -494,6 +522,10 @@ class GameEngine:
         if not npc:
             print(f"There's no one here named '{npc_name}'.")
             return
+        
+        # Trigger quest events
+        self.quest_system.trigger_event(self.game_state, "talked_to_npc", 
+                                      {"npc_name": npc.name})
         
         # Start dialogue
         self.dialogue_system.start_conversation(npc, self.game_state)
@@ -548,3 +580,92 @@ class GameEngine:
         event = random.choice(events)
         print(f"\n[Random Event] {event}")
         input("Press Enter to continue...")
+    
+    def show_quest_log(self):
+        """Show the quest log."""
+        print(self.quest_system.get_quest_log())
+        input("\nPress Enter to continue...")
+    
+    def use_item(self, item_name: str):
+        """Use an item from inventory."""
+        player = self.game_state.player
+        
+        # Find item
+        item = self.inventory_system.find_item(player, item_name)
+        if not item:
+            print(f"You don't have '{item_name}'.")
+            return
+        
+        # Use item
+        result = item.use(player, self.game_state)
+        print(result["message"])
+        
+        # Remove item if consumed
+        if result.get("consumed", False):
+            self.inventory_system.remove_item(player, item, 1)
+            
+            # Trigger quest events for item use
+            self.quest_system.trigger_event(self.game_state, "item_used", 
+                                          {"item_name": item.name})
+        
+        input("\nPress Enter to continue...")
+    
+    def equip_item(self, item_name: str):
+        """Equip an item from inventory."""
+        player = self.game_state.player
+        
+        # Find item
+        item = self.inventory_system.find_item(player, item_name)
+        if not item:
+            print(f"You don't have '{item_name}'.")
+            return
+        
+        # Try to equip item
+        if player.equip_item(item):
+            print(f"You equip {item.name}.")
+        else:
+            print(f"You cannot equip {item.name}.")
+        
+        input("\nPress Enter to continue...")
+    
+    def drop_item(self, item_name: str):
+        """Drop an item from inventory."""
+        player = self.game_state.player
+        location = self.game_state.current_location
+        
+        # Find item
+        item = self.inventory_system.find_item(player, item_name)
+        if not item:
+            print(f"You don't have '{item_name}'.")
+            return
+        
+        # Drop item
+        if self.inventory_system.drop_item(player, item, 1, location):
+            print(f"You drop {item.name}.")
+        else:
+            print(f"You cannot drop {item.name}.")
+        
+        input("\nPress Enter to continue...")
+    
+    def start_combat(self, enemies: List):
+        """Start a combat encounter."""
+        player = self.game_state.player
+        
+        print(f"\n{'='*50}")
+        print("COMBAT ENCOUNTER!")
+        print(f"{'='*50}")
+        
+        result = self.combat_system.start_combat(player, enemies)
+        
+        if result.victory:
+            print("You are victorious!")
+            # Award experience
+            if result.experience_gained > 0:
+                print(f"Experience gained: {result.experience_gained}")
+        elif result.fled:
+            print("You managed to escape!")
+        else:
+            print("You have been defeated...")
+            # Handle defeat (could respawn at safe location, etc.)
+            
+        return result

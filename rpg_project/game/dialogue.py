@@ -511,3 +511,37 @@ class DialogueSystem:
     def get_dialogue_tree(self, npc_name: str) -> Optional[DialogueTree]:
         """Get a dialogue tree by NPC name."""
         return self.dialogue_trees.get(npc_name)
+    
+    def create_simple_dialogue(self, npc_name: str, greeting: str, responses: List[str]) -> DialogueTree:
+        """Create a simple dialogue tree with basic greeting and responses."""
+        tree = DialogueTree(f"simple_{npc_name.lower().replace(' ', '_')}", npc_name)
+        
+        # Start node
+        start = DialogueNode("start", "npc", greeting)
+        
+        # Add response options
+        for i, response in enumerate(responses):
+            option = DialogueOption(f"response_{i}", response, "")
+            option.closes_dialogue = True
+            start.add_option(option)
+        
+        tree.add_node(start)
+        return tree
+    
+    def set_npc_dialogue_state(self, npc_name: str, state: str):
+        """Set an NPC's dialogue state."""
+        tree = self.get_dialogue_tree(npc_name)
+        if tree:
+            tree.current_node = state
+    
+    def has_conversation_flag(self, flag: str) -> bool:
+        """Check if a conversation flag is set."""
+        if self.current_conversation:
+            return self.current_conversation.get_conversation_flag(flag)
+        return False
+    
+    def set_conversation_flag(self, flag: str, value: Any):
+        """Set a conversation flag."""
+        if self.current_conversation:
+            self.current_conversation.set_conversation_flag(flag, value)
+        return self.dialogue_trees.get(npc_name)

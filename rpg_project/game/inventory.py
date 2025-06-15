@@ -500,3 +500,78 @@ class InventorySystem:
             character.inventory.sort(key=lambda item: item.value, reverse=True)
         elif sort_by == "quantity":
             character.inventory.sort(key=lambda item: item.quantity, reverse=True)
+        elif sort_by == "weight":
+            character.inventory.sort(key=lambda item: item.weight, reverse=True)
+    
+    def get_item_templates(self) -> Dict[str, Item]:
+        """Get all item templates."""
+        return self.item_templates.copy()
+    
+    def get_template_by_id(self, template_id: str) -> Optional[Item]:
+        """Get a specific item template by ID."""
+        return self.item_templates.get(template_id)
+    
+    def get_items_by_type(self, character, item_type: str) -> List[Item]:
+        """Get all items of a specific type from character's inventory."""
+        return [item for item in character.inventory if item.item_type == item_type]
+    
+    def get_usable_items(self, character) -> List[Item]:
+        """Get all usable items from character's inventory."""
+        return [item for item in character.inventory 
+                if item.item_type in ["consumable", "crystal"] and item.can_use(character)]
+    
+    def get_equipment_items(self, character) -> List[Item]:
+        """Get all equippable items from character's inventory."""
+        return [item for item in character.inventory 
+                if item.item_type in ["weapon", "armor", "accessory"] and item.can_use(character)]
+    
+    def transfer_item(self, from_character, to_character, item: Item, quantity: int = 1) -> bool:
+        """Transfer item between characters."""
+        if self.remove_item(from_character, item, quantity):
+            # Create new item with specified quantity
+            new_item = Item(item.name, item.item_type, item.description, quantity)
+            new_item.value = item.value
+            new_item.weight = item.weight
+            new_item.properties = item.properties.copy()
+            new_item.requirements = item.requirements.copy()
+            new_item.effects = item.effects.copy()
+            new_item.stats = item.stats.copy()
+            new_item.crystal_type = item.crystal_type
+            new_item.crystal_power = item.crystal_power
+            new_item.crystal_purity = item.crystal_purity
+            
+            return self.add_item(to_character, new_item)
+        
+        return False
+    
+    def drop_item(self, character, item: Item, quantity: int = 1, location=None) -> bool:
+        """Drop item from character's inventory."""
+        if self.remove_item(character, item, quantity):
+            if location:
+                # Create new item for location
+                dropped_item = Item(item.name, item.item_type, item.description, quantity)
+                dropped_item.value = item.value
+                dropped_item.weight = item.weight
+                dropped_item.properties = item.properties.copy()
+                dropped_item.requirements = item.requirements.copy()
+                dropped_item.effects = item.effects.copy()
+                dropped_item.stats = item.stats.copy()
+                dropped_item.crystal_type = item.crystal_type
+                dropped_item.crystal_power = item.crystal_power
+                dropped_item.crystal_purity = item.crystal_purity
+                
+                location.add_item(dropped_item)
+            
+            return True
+        
+        return False
+    
+    def pick_up_item(self, character, item: Item, location=None) -> bool:
+        """Pick up item from location."""
+        if location and item in location.items:
+            if self.add_item(character, item):
+                location.remove_item(item)
+                return True
+        
+        return False
+            character.inventory.sort(key=lambda item: item.quantity, reverse=True)

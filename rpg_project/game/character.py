@@ -60,7 +60,7 @@ class Character:
         self.corruption_level = 0
         self.max_corruption = 100
         
-        # Equipment slots
+        # Equipment slots (basic dict for now, will be enhanced)
         self.equipment = {
             "weapon": None,
             "armor": None,
@@ -225,6 +225,61 @@ class Character:
             status.append("Slightly Corrupted")
         
         return ", ".join(status) if status else "Normal"
+    
+    def equip_item(self, item, slot: str = None):
+        """Equip an item to appropriate slot."""
+        # Determine slot if not specified
+        if not slot:
+            if hasattr(item, 'item_type'):
+                if item.item_type == "weapon":
+                    slot = "weapon"
+                elif item.item_type == "armor":
+                    slot = "armor"
+                elif item.item_type == "accessory":
+                    slot = "accessory"
+                elif item.item_type == "crystal" and "focus" in item.name.lower():
+                    slot = "crystal_focus"
+        
+        if slot and slot in self.equipment:
+            # Remove current item if any
+            current_item = self.equipment[slot]
+            if current_item and current_item in self.inventory:
+                pass  # Keep it in inventory
+            
+            # Equip new item
+            self.equipment[slot] = item
+            
+            # Remove from inventory if it's there
+            if item in self.inventory:
+                self.inventory.remove(item)
+            
+            self.update_derived_stats()
+            return True
+        
+        return False
+    
+    def unequip_item(self, slot: str):
+        """Unequip item from slot and return it to inventory."""
+        if slot in self.equipment and self.equipment[slot]:
+            item = self.equipment[slot]
+            self.equipment[slot] = None
+            
+            # Add back to inventory if there's space
+            if len(self.inventory) < self.max_inventory:
+                self.inventory.append(item)
+            
+            self.update_derived_stats()
+            return item
+        
+        return None
+    
+    def get_equipment_bonus(self, stat: str) -> int:
+        """Get total equipment bonus for a stat."""
+        bonus = 0
+        for slot, item in self.equipment.items():
+            if item and hasattr(item, 'stats') and stat in item.stats:
+                bonus += item.stats[stat]
+        return bonus
 
 
 class PlayerCharacter(Character):
@@ -246,10 +301,42 @@ class PlayerCharacter(Character):
     
     def distribute_attribute_points(self, points: int):
         """Allow player to distribute attribute points."""
-        # This would be handled by the UI system
-        # For now, just print what would happen
-        print(f"Distributing {points} attribute points...")
-        # In actual implementation, this would call the UI
+        print(f"You have {points} attribute points to distribute.")
+        remaining_points = points
+        
+        while remaining_points > 0:
+            print(f"\nCurrent Attributes:")
+            for attr in Attribute:
+                current_value = self.attributes[attr]
+                modifier = self.get_attribute_modifier(attr)
+                print(f"{attr.value.title()}: {current_value} ({modifier:+d})")
+            
+            print(f"\nRemaining points: {remaining_points}")
+            print("Choose an attribute to increase (or 'done' to finish):")
+            
+            for i, attr in enumerate(Attribute, 1):
+                if self.attributes[attr] < 18:  # Cap at 18
+                    print(f"{i}. {attr.value.title()}")
+            
+            choice = input("Your choice: ").strip().lower()
+            
+            if choice == 'done':
+                break
+            
+            try:
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(Attribute):
+                    attr = list(Attribute)[choice_num - 1]
+                    if self.attributes[attr] < 18:
+                        self.attributes[attr] += 1
+                        remaining_points -= 1
+                        print(f"Increased {attr.value.title()} to {self.attributes[attr]}")
+                    else:
+                        print(f"{attr.value.title()} is already at maximum!")
+                else:
+                    print("Invalid choice.")
+            except ValueError:
+                print("Invalid choice.")
     
     def add_title(self, title: str):
         """Add a new title to the character."""
@@ -374,4 +461,5 @@ def create_character_from_template(template: dict) -> Character:
                 character.crystal_attunements[CrystalType[crystal_name.upper()]] = level
     
     character.update_derived_stats()
+    return character
     return character

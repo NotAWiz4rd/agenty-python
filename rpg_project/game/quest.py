@@ -528,3 +528,58 @@ class QuestSystem:
             log += "No quests available.\n"
         
         return log
+    
+    def auto_start_quests(self, game_state):
+        """Automatically start quests that should begin."""
+        # Check for automatically triggered quests
+        auto_quests = ["prologue"]
+        
+        for quest_id in auto_quests:
+            quest = self.get_quest(quest_id)
+            if quest and quest.status == QuestStatus.NOT_STARTED and quest.can_start(game_state):
+                self.start_quest(quest_id, game_state)
+    
+    def trigger_event(self, game_state, event_type: str, event_data: Dict[str, Any]):
+        """Trigger a quest event."""
+        self.update_quest_progress(game_state, event_type, event_data)
+        
+        # Check for new quests that might become available
+        self.auto_start_quests(game_state)
+    
+    def get_quest_statistics(self) -> Dict[str, int]:
+        """Get quest statistics."""
+        return {
+            "total_quests": len(self.quests),
+            "active_quests": len(self.active_quests),
+            "completed_quests": len(self.completed_quests),
+            "failed_quests": len(self.failed_quests),
+            "available_quests": len([q for q in self.quests.values() 
+                                   if q.status == QuestStatus.NOT_STARTED])
+        }
+    
+    def reset_quest(self, quest_id: str, game_state) -> bool:
+        """Reset a quest to not started state (for debugging)."""
+        quest = self.get_quest(quest_id)
+        if quest:
+            # Remove from all lists
+            if quest in self.active_quests:
+                self.active_quests.remove(quest)
+            if quest in self.completed_quests:
+                self.completed_quests.remove(quest)
+            if quest in self.failed_quests:
+                self.failed_quests.remove(quest)
+            
+            # Reset quest state
+            quest.status = QuestStatus.NOT_STARTED
+            quest.current_objective_index = 0
+            quest.quest_flags.clear()
+            
+            # Reset objectives
+            for objective in quest.objectives:
+                objective.current_progress = 0
+                objective.completed = False
+            
+            return True
+        
+        return False
+        return log
