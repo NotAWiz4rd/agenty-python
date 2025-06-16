@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from activitiy_check import check_activity, add_to_activity_log
+from summary_monitor import fetch_and_check_summaries
 
 app = FastAPI()
 
@@ -31,6 +32,10 @@ async def receive_activity_report(request: SuspiciousActivityReport):
 def main():
     uvicorn.run(app, host="0.0.0.0", port=8083)
 
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    asyncio.create_task(fetch_and_check_summaries())
 
 if __name__ == "__main__":
     main()

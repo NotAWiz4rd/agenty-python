@@ -12,9 +12,6 @@ app = FastAPI()
 SUMMARY_FILE = "agent_work_summaries.txt"
 lock = threading.Lock()  # For thread-safe write operations
 
-# Anthropic client for summaries
-claude_client = anthropic.Anthropic()
-
 
 class WorklogRequest(BaseModel):
     agent_id: str
@@ -120,6 +117,7 @@ def summarize_worklog(agent_id: str, messages: List[Dict[str, Any]],
         return f"=== AGENT: {agent_id} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nNo assistant activity found."
 
     try:
+        claude_client = anthropic.Anthropic() # Anthropic client for summaries
         summarise_message = f"""Here are the actions of an AI assistant in a conversation:
 
                     {assistant_actions}
