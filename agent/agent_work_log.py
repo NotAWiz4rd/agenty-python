@@ -2,8 +2,6 @@
 import os
 
 import requests
-from typing import List, Dict, Any
-
 from pydantic import BaseModel
 
 WORK_LOG_BASE_URL = os.getenv("WORK_LOG_BASE_URL") or "http://localhost:8082"
@@ -12,9 +10,9 @@ class WorklogRequest(BaseModel):
     agent_id: str
     first_timestamp: str
     last_timestamp: str
-    messages: List[Dict[str, Any]]
+    messages: list[dict]
 
-def send_work_log(agent_id: str, new_messages: List[Dict[str, Any]], first_timestamp: str, last_timestamp: str):
+def send_work_log(agent_id: str, new_messages: list[dict], first_timestamp: str, last_timestamp: str):
     """
     Sends a work log to the Group Work Log Service.
 
@@ -35,7 +33,7 @@ def send_work_log(agent_id: str, new_messages: List[Dict[str, Any]], first_times
 
     try:
         # Send the request to the Group Work Log Service
-        response = requests.post(f"{WORK_LOG_BASE_URL}/submit-worklog", json=payload)
+        response = requests.post(f"{WORK_LOG_BASE_URL}/submit-worklog", json=payload.model_dump())
         if response.status_code == 200:
             print(f"\033[92mWork log successfully sent\033[0m")
             return True
