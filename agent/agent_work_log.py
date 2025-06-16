@@ -33,7 +33,7 @@ def send_work_log(agent_id: str, new_messages: list[dict], first_timestamp: str,
 
     try:
         # Send the request to the Group Work Log Service
-        response = requests.post(f"{WORK_LOG_BASE_URL}/submit-worklog", json=payload.model_dump_json())
+        response = requests.post(f"{WORK_LOG_BASE_URL}/submit-worklog", json=payload.model_dump())
         if response.status_code == 200:
             print(f"\033[92mWork log successfully sent\033[0m")
             return True
