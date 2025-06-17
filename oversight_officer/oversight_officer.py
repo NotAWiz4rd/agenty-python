@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
-from activitiy_check import check_activity, add_to_activity_log
+from activity_check import check_activity, add_to_activity_log
 from summary_monitor import fetch_and_check_summaries
 
 app = FastAPI()

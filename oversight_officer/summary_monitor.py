@@ -20,7 +20,7 @@ async def fetch_and_check_summaries(start_timestamp=None):
                 if summaries:
                     summaries.sort(key=lambda s: s["timestamp"])
                     for summary in summaries:
-                        from activitiy_check import check_activity
+                        from activity_check import check_activity
                         check_activity(summary["summary"])
                     # create a new timestamp for the next check
                     last_timestamp = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "")
