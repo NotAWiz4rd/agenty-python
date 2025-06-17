@@ -4,15 +4,15 @@ from datetime import datetime, timezone
 
 GROUP_WORK_LOG_URL = "http://localhost:8082/summaries"
 
-async def fetch_and_check_summaries(start_timestamp: str =None):
+async def fetch_and_check_summaries(start_timestamp: str):
     last_timestamp = start_timestamp
     while True:
-        params = {}
-        if last_timestamp:
-            params["after_timestamp"] = last_timestamp
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(GROUP_WORK_LOG_URL, params=params)
+                response = await client.get(
+                    GROUP_WORK_LOG_URL,
+                    params={"after_timestamp": last_timestamp}
+                )
                 response.raise_for_status()
                 summaries = response.json()
                 if summaries:
