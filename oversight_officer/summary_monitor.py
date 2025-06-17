@@ -3,6 +3,7 @@ import httpx
 from datetime import datetime, timezone
 
 GROUP_WORK_LOG_URL = "http://localhost:8082/summaries"
+TIME_BETWEEN_CHECKS = 120  # seconds, default check every 2 minutes
 
 async def fetch_and_check_summaries(start_timestamp: str):
     last_timestamp = start_timestamp
@@ -25,4 +26,4 @@ async def fetch_and_check_summaries(start_timestamp: str):
         except Exception as e:
             print(f"Error fetching summaries: {e}")
 
-        await asyncio.sleep(120)  # default check every 2 minutes
+        await asyncio.sleep(TIME_BETWEEN_CHECKS)
