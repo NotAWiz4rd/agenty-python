@@ -36,7 +36,6 @@ def main():
 @app.on_event("startup")
 async def startup_event():
     import asyncio
-    from summary_monitor import fetch_and_check_summaries
     # Start monitoring summaries immediately after the server starts
     # Get the current timestamp in ISO format without timezone offset to fetch summaries after this time
     now = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "")
