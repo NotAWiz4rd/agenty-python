@@ -1,11 +1,7 @@
 import json
 
-from agent.team_config_loader import get_current_agent_name
 
-agent_name = get_current_agent_name()
-
-
-def get_system_prompt(is_team_mode: bool = False) -> str:
+def get_system_prompt(agent_name: str, is_team_mode: bool = False) -> str:
     """Returns the system prompt for the agent."""
     if is_team_mode:
         return f"""You are {agent_name}, an autonomous AI agent with the ability to self-modify your code, working as part of a team of agents. 
@@ -35,7 +31,7 @@ def remove_all_but_last_three_cache_controls(conversation):
     return json.loads(first_part + last_part)
 
 
-def run_inference(conversation, llm_client, tools, consecutive_tool_count, is_team_mode: bool = False,
+def run_inference(conversation, llm_client, tools, consecutive_tool_count, agent_name: str = "Claude", is_team_mode: bool = False,
                   max_consecutive_tools=10):
     tools_param = []
     for t in tools:
@@ -64,7 +60,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, is_te
     return llm_client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=9999,
-        system=get_system_prompt(is_team_mode),  # Pass system prompt as a top-level parameter
+        system=get_system_prompt(agent_name, is_team_mode),  # Pass system prompt as a top-level parameter
         messages=conversation,
         tool_choice=tool_choice,
         tools=tools_param

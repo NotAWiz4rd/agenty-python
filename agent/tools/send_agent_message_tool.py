@@ -26,7 +26,7 @@ SendAgentMessageInputSchema = {
             "description": "The name of the agent sending the message (your name)."
         }
     },
-    "required": ["target_agent", "message"]
+    "required": ["target_agent", "from_agent", "message"]
 }
 
 
@@ -59,11 +59,6 @@ def send_agent_message(input_data: dict) -> str:
 
     if not target_agent or not message:
         return "target_agent and message are required."
-
-    # Get the current agent's name if from_agent is not provided
-    if not from_agent:
-        from agent.team_config_loader import get_current_agent_name
-        from_agent = get_current_agent_name() or "DefaultAgent"
 
     # Get dynamic endpoints from team configuration
     agent_endpoints = get_agent_endpoints()

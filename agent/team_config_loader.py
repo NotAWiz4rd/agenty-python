@@ -51,7 +51,7 @@ def load_team_config(config_path: str = "") -> TeamConfig:
             agent = AgentConfig(
                 name=agent_data.get('name', 'Claude'),
                 host=agent_data.get('host', 'http://0.0.0.0'),
-                port=agent_data.get('port', 8000),
+                port=agent_data.get('port', 8081),
                 is_current_agent=agent_data.get('isCurrentAgent', False)
             )
             agent_configs.append(agent)
@@ -77,40 +77,12 @@ def get_team_config() -> TeamConfig:
     return TEAM_CONFIG
 
 
-def get_current_agent_name() -> Optional[str]:
+def get_current_agent_name() -> str:
     """
     Returns the name of the current agent as specified in the team configuration.
 
     Returns:
-        The name of the current agent, or None if not found.
+        The name of the current agent, or Claude if not found.
     """
-    config = get_team_config()
-    current_agent = config.get_current_agent()
-    if current_agent:
-        return current_agent.name
-    return "Claude"  # Default name if not found
-
-
-def get_current_agent_port() -> int:
-    """
-    Returns the port of the current agent as specified in the team configuration.
-
-    Returns:
-        The port of the current agent, or 8000 if not found.
-    """
-    config = get_team_config()
-    current_agent = config.get_current_agent()
-    if current_agent:
-        return current_agent.port
-    return 8000
-
-
-def is_team_mode() -> bool:
-    """
-    Checks if the application is running in team mode (multiple agents).
-
-    Returns:
-        True if multiple agents are defined in the configuration, False otherwise.
-    """
-    config = get_team_config()
-    return len(config.agents) > 1
+    current_agent = get_team_config().get_current_agent()
+    return current_agent.name if current_agent else "Claude"

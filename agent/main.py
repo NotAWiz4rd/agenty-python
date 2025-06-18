@@ -7,7 +7,7 @@ import anthropic
 from agent.api import start_api
 from agent.base_agent import Agent
 from agent.context_handling import (cleanup_context)
-from agent.team_config_loader import get_team_config
+from agent.team_config_loader import get_team_config, get_current_agent_name
 from agent.util import log_error
 
 
@@ -22,8 +22,10 @@ def main():
 
     atexit.register(cleanup_context)
 
+    agent_name = get_current_agent_name()
+
     try:
-        agent = Agent(anthropic_client, team_mode, team_config)
+        agent = Agent(agent_name, anthropic_client, team_mode)
         agent.run()
     except Exception as e:
         error_message = f"Unhandled exception: {str(e)}"

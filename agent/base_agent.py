@@ -3,11 +3,9 @@ import datetime
 import sys
 
 from agent.agent_work_log import send_work_log
-
 from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
-from agent.team_config_loader import get_current_agent_name
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
 
@@ -47,7 +45,7 @@ def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_
 
 
 class Agent:
-    def __init__(self, llm_client, team_mode, team_config=None):
+    def __init__(self, agent_name: str, llm_client, team_mode: bool):
         self.llm_client = llm_client
         self.tools = get_tool_list(team_mode)
         self.is_team_mode = team_mode
@@ -60,13 +58,9 @@ class Agent:
         self.last_logged_index = 0  # Last index of the group chat messages that were logged
         self.last_log_time = datetime.datetime.utcnow().isoformat()  # Last time a log was sent
 
-        # Store the team configuration
-        self.team_config = team_config
-        # Set the agent's name based on the team configuration
-        self.name = get_current_agent_name()
+        self.name = agent_name
 
         # For work log tracking
-        self.agent_id = f"agent-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"  # TODO: Replace with actual agent ID logic
         self.steps_since_last_log = 0
         self.log_every_n_steps = 10  # Default: Send log every 10 steps
 
@@ -77,7 +71,7 @@ class Agent:
             new_messages = conversation[self.last_logged_index:]
             first_timestamp = self.last_log_time
             last_timestamp = datetime.datetime.utcnow().isoformat()
-            success = send_work_log(self.agent_id, new_messages, first_timestamp, last_timestamp)
+            success = send_work_log(self.name, new_messages, first_timestamp, last_timestamp)
             if success:
                 self.steps_since_last_log = 0
                 self.last_logged_index = len(conversation)
@@ -132,7 +126,7 @@ class Agent:
                 conversation.append(message)
 
             response = run_inference(conversation, self.llm_client, self.tools, self.consecutive_tool_count,
-                                     self.is_team_mode,
+                                     self.name, self.is_team_mode,
                                      self.max_consecutive_tools)
             tool_results = []
 
