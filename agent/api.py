@@ -40,13 +40,13 @@ async def send_to_agent(request: MessageRequest):
 
 def start_uvicorn_app(host: str, port: int):
     """Start the FastAPI app using Uvicorn server"""
-    host = host or "0.0.0.0"
-    port = port or 8000
     uvicorn.run(app, host=host, port=port)
 
 
-def start_api(agent_config: AgentConfig):
+def start_api(agent_config: AgentConfig | None = None):
     """Start the API server in the background"""
-    api_thread = threading.Thread(target=start_uvicorn_app, args=(agent_config.host, agent_config.port), daemon=True)
+    host = agent_config.host if agent_config else "http://0.0.0.0"
+    port = agent_config.port if agent_config else 8081
+    api_thread = threading.Thread(target=start_uvicorn_app, args=(host, port), daemon=True)
     api_thread.start()
-    print(f"\033[92mAPI server has been started and is available at{agent_config.host}:{agent_config.port}/\033[0m")
+    print(f"\033[92mAPI server has been started and is available at {host}:{port}/\033[0m")
