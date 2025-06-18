@@ -12,16 +12,16 @@ from agent.tools.base_tool import ToolDefinition
 SendGroupMessageInputSchema = {
     "type": "object",
     "properties": {
-        "username": {
+        "from_agent": {
             "type": "string",
-            "description": "The username to send as."
+            "description": "The name of the agent sending the message (your name). This is used to identify who sent the message."
         },
         "message": {
             "type": "string",
             "description": "The content of the message to send to the group chat."
         }
     },
-    "required": ["username", "message"]
+    "required": ["from_agent", "message"]
 }
 
 GROUP_CHAT_API_URL = "http://127.0.0.1:5000/send"
@@ -35,11 +35,11 @@ def send_group_message(input_data: dict) -> str:
     if isinstance(input_data, str):
         input_data = json.loads(input_data)
 
-    username = input_data.get("username")  # todo force agent to use its own username
+    username = input_data.get("from_agent")
     message = input_data.get("message")
 
     if not username or not message:
-        return "Username and message are required."
+        return "Error: Username and message are required."
 
     payload = {"username": username, "message": message}
     try:

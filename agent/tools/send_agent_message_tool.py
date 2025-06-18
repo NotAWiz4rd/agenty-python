@@ -4,7 +4,7 @@ import json
 
 import requests
 
-from agent.team_config_loader import get_team_config
+from agent.team_config_loader import get_agent_endpoints
 from agent.tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
@@ -29,20 +29,8 @@ SendAgentMessageInputSchema = {
     "required": ["target_agent", "from_agent", "message"]
 }
 
-
-# Dynamic function to get agent endpoints from team-config.json
-def get_agent_endpoints():
-    """
-    Get agent endpoints dynamically from team-config.json
-    """
-    team_config = get_team_config()
-    endpoints = {}
-
-    for agent in team_config.agents:
-        endpoint = f"{agent.host}:{agent.port}/send-message"
-        endpoints[agent.name] = endpoint
-
-    return endpoints
+# we only need to load this once
+AGENT_ENDPOINTS = get_agent_endpoints()
 
 
 def send_agent_message(input_data: dict) -> str:
@@ -57,19 +45,16 @@ def send_agent_message(input_data: dict) -> str:
     message = input_data.get("message")
     from_agent = input_data.get("from_agent")
 
-    if not target_agent or not message:
-        return "target_agent and message are required."
-
-    # Get dynamic endpoints from team configuration
-    agent_endpoints = get_agent_endpoints()
+    if not target_agent or not message or not from_agent:
+        return "Error: target_agent, message and from_agent are required."
 
     # Check if target agent exists in our endpoints
-    if target_agent not in agent_endpoints:
-        available_agents = ", ".join(agent_endpoints.keys())
+    if target_agent not in AGENT_ENDPOINTS:
+        available_agents = ", ".join(AGENT_ENDPOINTS.keys())
         return f"Unknown target agent '{target_agent}'. Available agents: {available_agents}"
 
     # Get the API endpoint for the target agent
-    api_url = agent_endpoints[target_agent]
+    api_url = AGENT_ENDPOINTS[target_agent] + "/send-message"
 
     payload = {"message": message, "from_agent": from_agent}
 

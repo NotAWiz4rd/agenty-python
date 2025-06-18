@@ -18,14 +18,14 @@ def main():
     # Set team mode to True only if multiple agents are defined in the configuration
     team_mode = False if not team_config or len(team_config.agents) <= 1 else True
 
-    start_api(team_config.get_current_agent())
-
     atexit.register(cleanup_context)
 
-    agent_name = get_current_agent_name()
-
     try:
+        start_api(team_config.get_current_agent())
+        agent_name = get_current_agent_name()
+
         agent = Agent(agent_name, anthropic_client, team_mode)
+        print(f"\033[92mStarting Agent named {agent_name}.\033[0m")
         agent.run()
     except Exception as e:
         error_message = f"Unhandled exception: {str(e)}"

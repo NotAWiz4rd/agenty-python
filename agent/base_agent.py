@@ -4,7 +4,7 @@ import sys
 
 from agent.agent_work_log import send_work_log
 from agent.context_handling import (set_conversation_context, load_conversation,
-                                    get_from_message_queue, add_to_message_queue)
+                                    get_all_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
@@ -13,13 +13,11 @@ from agent.util import check_for_agent_restart, get_user_message, get_new_messag
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
     if is_team_mode:
         # check message queue for new messages
-        messages, has_api_message = get_from_message_queue(block=False)
+        messages: list[str] = get_all_from_message_queue()
 
-        if has_api_message:
+        if len(messages) > 0:
             consecutive_tool_count[0] = 0
-            # Process API message
-            print(f"\033[95mAPI-Request\033[0m: {messages}")
-            all_messages = ""
+            all_messages: str = ""
             for message in messages:
                 all_messages += message + "\n"
             return {"role": "user", "content": all_messages}
@@ -154,7 +152,7 @@ class Agent:
             conversation.append({
                 "role": "assistant",
                 "content": [
-                    # for each block Claude returned, mirror it exactly
+                    # for each block LLM returned, mirror it exactly
                     {
                         "type": b.type,
                         **({
