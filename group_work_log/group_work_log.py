@@ -11,9 +11,7 @@ from pydantic import BaseModel
 app = FastAPI()
 SUMMARY_FILE = "agent_work_summaries.txt"
 lock = threading.Lock()  # For thread-safe write operations
-
-# Anthropic client for summaries
-claude_client = anthropic.Anthropic()
+claude_client = anthropic.Anthropic() # Anthropic client for summaries
 
 
 class WorklogRequest(BaseModel):
