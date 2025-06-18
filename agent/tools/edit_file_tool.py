@@ -16,11 +16,11 @@ EditFileInputSchema = {
         },
         "old_str": {
             "type": "string",
-            "description": "Text to search for – must match exactly and occur only once"
+            "description": "Text to search for – must match exactly and occur only once. Must be empty if the file is to be created."
         },
         "new_str": {
             "type": "string",
-            "description": "Text to replace old_str with"
+            "description": "Text to replace old_str with. Must be different from old_str. Must never be empty."
         }
     }
 }
@@ -38,6 +38,9 @@ def edit_file(input_data: dict) -> str:
     # validation
     if not path or old_str == new_str:
         raise ValueError("invalid input parameters")
+
+    if not new_str:
+        raise ValueError("new_str must not be empty")
 
     file_path = Path(path)
 

@@ -63,7 +63,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, is_te
 
     return llm_client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=4000,
+        max_tokens=9999,
         system=get_system_prompt(is_team_mode),  # Pass system prompt as a top-level parameter
         messages=conversation,
         tool_choice=tool_choice,
