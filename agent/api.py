@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from agent.context_handling import add_to_message_queue
+from agent.team_config_loader import AgentConfig
 
 # Initialize FastAPI app and agent
 app = FastAPI()
@@ -37,13 +38,15 @@ async def send_to_agent(request: MessageRequest):
     )
 
 
-def start_uvicorn_app():
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+def start_uvicorn_app(host: str, port: int):
+    """Start the FastAPI app using Uvicorn server"""
+    uvicorn.run(app, host=host, port=port)
 
 
-def start_api():
+def start_api(agent_config: AgentConfig | None = None):
     """Start the API server in the background"""
-    # todo add ability to set port via env var
-    api_thread = threading.Thread(target=start_uvicorn_app, daemon=True)
+    host = agent_config.host if agent_config else "http://0.0.0.0"
+    port = agent_config.port if agent_config else 8081
+    api_thread = threading.Thread(target=start_uvicorn_app, args=(host, port), daemon=True)
     api_thread.start()
-    print(f"\033[92mAPI server has been started and is available at http://localhost:8000/\033[0m")
+    print(f"\033[92mAPI server has been started and is available at {host}:{port}/\033[0m")

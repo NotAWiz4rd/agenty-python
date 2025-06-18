@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import datetime
 import sys
 
 from agent.agent_work_log import send_work_log
@@ -7,7 +8,7 @@ from agent.context_handling import (set_conversation_context, load_conversation,
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
-import datetime
+
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
     if is_team_mode:
@@ -44,8 +45,8 @@ def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_
 
 
 class Agent:
-    def __init__(self, client, team_mode):
-        self.client = client
+    def __init__(self, agent_name: str, llm_client, team_mode: bool):
+        self.llm_client = llm_client
         self.tools = get_tool_list(team_mode)
         self.is_team_mode = team_mode
         self.read_user_input = not team_mode  # initialise to True if not in team mode
@@ -54,11 +55,12 @@ class Agent:
         # Maximum number of consecutive tool calls allowed before forcing ask_human
         self.max_consecutive_tools = 10
         self.group_chat_messages = []
-        self.last_logged_index = 0 # Last index of the group chat messages that were logged
-        self.last_log_time = datetime.datetime.utcnow().isoformat() # Last time a log was sent
+        self.last_logged_index = 0  # Last index of the group chat messages that were logged
+        self.last_log_time = datetime.datetime.utcnow().isoformat()  # Last time a log was sent
+
+        self.name = agent_name
 
         # For work log tracking
-        self.agent_id = f"agent-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}" # TODO: Replace with actual agent ID logic
         self.steps_since_last_log = 0
         self.log_every_n_steps = 10  # Default: Send log every 10 steps
 
@@ -69,7 +71,7 @@ class Agent:
             new_messages = conversation[self.last_logged_index:]
             first_timestamp = self.last_log_time
             last_timestamp = datetime.datetime.utcnow().isoformat()
-            success = send_work_log(self.agent_id, new_messages, first_timestamp, last_timestamp)
+            success = send_work_log(self.name, new_messages, first_timestamp, last_timestamp)
             if success:
                 self.steps_since_last_log = 0
                 self.last_logged_index = len(conversation)
@@ -123,14 +125,15 @@ class Agent:
             if message is not None:
                 conversation.append(message)
 
-            response = run_inference(conversation, self.client, self.tools, self.consecutive_tool_count,
+            response = run_inference(conversation, self.llm_client, self.tools, self.consecutive_tool_count,
+                                     self.name, self.is_team_mode,
                                      self.max_consecutive_tools)
             tool_results = []
 
             # print assistant text and collect any tool calls
             for block in response.content:
                 if block.type == "text":
-                    print(f"\033[93mClaude\033[0m: {block.text}")
+                    print(f"\033[93m{self.name}\033[0m: {block.text}")
                 elif block.type == "tool_use":
                     # If the tool is ask_human, reset counter before executing
                     if block.name == "ask_human":
