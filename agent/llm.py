@@ -1,12 +1,22 @@
 import json
 
-from agent.team_config_loader import get_current_agent_name, is_team_mode
+from agent.team_config_loader import get_current_agent_name
 
 agent_name = get_current_agent_name()
-if is_team_mode():
-    system_prompt = f"You are {agent_name}, an AI assistant working as part of a team of agents. Always identify yourself as {agent_name} when communicating with other agents or humans. Your responses should be helpful, harmless, and honest."
-else:
-    system_prompt = "You are an AI assistant. Your responses should be helpful, harmless, and honest."
+
+
+def get_system_prompt(is_team_mode: bool = False) -> str:
+    """Returns the system prompt for the agent."""
+    if is_team_mode:
+        return f"""You are {agent_name}, an autonomous AI agent with the ability to self-modify your code, working as part of a team of agents. 
+    Always identify yourself as {agent_name} when communicating with other agents or humans.
+    You should strive to complete tasks in concert with your team. 
+    Your responses should be helpful, harmless, and honest.""".strip()
+    else:
+        return f"""You are {agent_name}, an autonomous AI agent with the ability to self-modify your code. 
+    Always identify yourself as {agent_name} when communicating with humans or other agents.
+    You should strive to complete tasks independently, but you can ask for human assistance if needed. 
+    Your responses should be helpful, harmless, and honest.""".strip()
 
 
 def remove_all_but_last_three_cache_controls(conversation):
@@ -25,7 +35,8 @@ def remove_all_but_last_three_cache_controls(conversation):
     return json.loads(first_part + last_part)
 
 
-def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_consecutive_tools=10):
+def run_inference(conversation, llm_client, tools, consecutive_tool_count, is_team_mode: bool = False,
+                  max_consecutive_tools=10):
     tools_param = []
     for t in tools:
         tools_param.append({
@@ -50,14 +61,11 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, max_c
 
     conversation = remove_all_but_last_three_cache_controls(conversation)
 
-    # Filter out any existing 'system' role messages to prevent API errors
-    filtered_conversation = [msg for msg in conversation if msg.get("role") != "system"]
-
     return llm_client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=4000,
-        system=system_prompt,  # Pass system prompt as a top-level parameter
-        messages=filtered_conversation,
+        system=get_system_prompt(is_team_mode),  # Pass system prompt as a top-level parameter
+        messages=conversation,
         tool_choice=tool_choice,
         tools=tools_param
     )
