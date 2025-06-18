@@ -4,9 +4,9 @@ import sys
 from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
+from agent.team_config_loader import get_current_agent_name
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
 from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
-from agent.team_config_loader import get_current_agent_name
 
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
@@ -44,8 +44,8 @@ def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_
 
 
 class Agent:
-    def __init__(self, client, team_mode, team_config=None):
-        self.client = client
+    def __init__(self, llm_client, team_mode, team_config=None):
+        self.llm_client = llm_client
         self.tools = get_tool_list(team_mode)
         self.is_team_mode = team_mode
         self.read_user_input = not team_mode  # initialise to True if not in team mode
@@ -107,7 +107,8 @@ class Agent:
             if message is not None:
                 conversation.append(message)
 
-            response = run_inference(conversation, self.client, self.tools, self.consecutive_tool_count,
+            response = run_inference(conversation, self.llm_client, self.tools, self.consecutive_tool_count,
+                                     self.is_team_mode,
                                      self.max_consecutive_tools)
             tool_results = []
 
