@@ -7,7 +7,7 @@ from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_all_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
-from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
+from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat, get_new_summaries, log_error
 
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
@@ -86,6 +86,23 @@ class Agent:
             formatted_message = f"[Group Chat] {message['username']}: {message['message']}"
             add_to_message_queue(formatted_message)
 
+    def check_new_summaries(self):
+        """Checks for new summaries from the summary monitor and adds them to the message queue.
+        If there are no new summaries, nothing happens.
+        """
+        try:
+            new_summaries = get_new_summaries()
+            if new_summaries:
+                for summary in new_summaries:
+                    formatted_summary = f"[Summary Monitor] Here is a summary from the group work log: {summary['summary']}"
+                    add_to_message_queue(formatted_summary)
+        except Exception as e:
+            # Log the error but don't crash the agent
+            import traceback
+            error_msg = f"Error checking new summaries: {str(e)}\n{traceback.format_exc()}"
+            log_error(error_msg)
+            print(f"Warning: Could not check for new summaries: {str(e)}")
+
     def run(self):
         # Try to load saved conversation context
         conversation = load_conversation()
@@ -113,9 +130,12 @@ class Agent:
         set_conversation_context(conversation)
 
         while True:
+
             if self.is_team_mode:
                 # Check for new group messages at each cycle
                 self.check_group_messages()
+                # Check for new summaries at each cycle
+                self.check_new_summaries()
 
             tool_count_object = [self.consecutive_tool_count]
             message = get_new_message(self.is_team_mode, tool_count_object, self.read_user_input)

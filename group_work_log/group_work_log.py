@@ -1,5 +1,6 @@
 import threading
 from datetime import datetime
+import os
 from typing import List, Optional, Dict, Any
 
 import anthropic
@@ -33,7 +34,7 @@ summaries: List[WorklogSummary] = []
 
 # Load existing summaries on startup
 def load_summaries():
-    print("Loading existing summaries...")
+    print("New summary file created: ", SUMMARY_FILE)
     try:
         with open(SUMMARY_FILE, "r", encoding="utf-8") as f:
             summary_text = ""
@@ -83,6 +84,7 @@ def load_summaries():
 
     except FileNotFoundError:
         # File doesn't exist yet, which is fine
+        print("No existing summary file found, starting fresh.")
         pass
 
 
@@ -220,6 +222,15 @@ def main():
     load_summaries()
     uvicorn.run(app, host="0.0.0.0", port=8082)
 
+@app.on_event("startup")
+def startup_event():
+    if os.path.exists(SUMMARY_FILE):
+        os.remove(SUMMARY_FILE)
+
+@app.on_event("shutdown")
+def cleanup_summaries():
+    global summaries
+    summaries.clear()
 
 if __name__ == "__main__":
     main()
