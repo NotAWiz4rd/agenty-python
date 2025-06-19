@@ -7,17 +7,17 @@ from pydantic import BaseModel
 WORK_LOG_BASE_URL = os.getenv("WORK_LOG_BASE_URL") or "http://localhost:8082"
 
 class WorklogRequest(BaseModel):
-    agent_id: str
+    agent_name: str
     first_timestamp: str
     last_timestamp: str
     messages: list[dict]
 
-def send_work_log(agent_id: str, new_messages: list[dict], first_timestamp: str, last_timestamp: str):
+def send_work_log(agent_name: str, new_messages: list[dict], first_timestamp: str, last_timestamp: str):
     """
     Sends a work log to the Group Work Log Service.
 
     Args:
-        agent_id: The ID of the agent
+        agent_name: The ID of the agent
         new_messages: The current conversation
         last_timestamp: The timestamp of the last log
         first_timestamp: The timestamp of the first log in this session
@@ -25,7 +25,7 @@ def send_work_log(agent_id: str, new_messages: list[dict], first_timestamp: str,
 
     # Prepare the request payload
     payload = WorklogRequest(
-        agent_id=agent_id,
+        agent_name=agent_name,
         first_timestamp=first_timestamp,
         last_timestamp=last_timestamp,
         messages=new_messages

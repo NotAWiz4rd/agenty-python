@@ -29,9 +29,13 @@ AskHumanInputSchema = {
         "reason": {
             "type": "string",
             "description": "Optional explanation for why you need this information."
+        },
+        "agent_name": {
+            "type": "string",
+            "description": "The name of the agent asking the question."
         }
     },
-    "required": ["question"]
+    "required": ["question", "agent_name"],
 }
 
 
@@ -46,13 +50,14 @@ def ask_human(input_data: dict) -> str:
 
     question = input_data.get("question", "")
     reason = input_data.get("reason", "")
+    agent_name = input_data.get("agent_name", "Claude")
 
     # Format the question to include the reason if provided
     formatted_question = question
     if reason:
         formatted_question = f"{question}\n(Reason: {reason})"
 
-    print(f"\033[94mClaude is asking\033[0m: {formatted_question}")
+    print(f"\033[94m{agent_name} is asking\033[0m: {formatted_question}")
     print(f"\033[94mYour response\033[0m: ", end="", flush=True)
 
     # Use the agent's function to get user input

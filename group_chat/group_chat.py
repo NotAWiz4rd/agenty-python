@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 app = FastAPI()
 MSG_FILE = "chat_messages.txt"
+INITIAL_MESSAGE = "Welcome to the group chat! Please introduce yourself." # todo add work order here
 lock = threading.Lock()  # For thread-safe writes
 
 
@@ -37,7 +38,7 @@ def load_messages():
         # File doesn't exist yet, which is fine
         # Add an initial message from the "supervisor"
         initial_message = StoredMessage(username="supervisor", timestamp=datetime.utcnow().isoformat(),
-                                        message="Welcome to the group chat!")  # todo add work order here
+                                        message=INITIAL_MESSAGE)
         messages.append(initial_message)
         with open(MSG_FILE, "a", encoding="utf-8") as f:
             f.write(f"{initial_message.username}||{initial_message.timestamp}||{initial_message.message}\n")

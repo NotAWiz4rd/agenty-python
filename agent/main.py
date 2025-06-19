@@ -7,23 +7,26 @@ import anthropic
 from agent.api import start_api
 from agent.base_agent import Agent
 from agent.context_handling import (cleanup_context)
+from agent.team_config_loader import get_team_config, get_current_agent_name
 from agent.util import log_error
-
-# todo add ability to set team mode via env var
-TEAM_MODE = False  # Set to True if running in team mode
-
-client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
-global_agent = Agent(client, TEAM_MODE)
 
 
 def main():
-    if TEAM_MODE:
-        start_api()
+    anthropic_client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
+
+    team_config = get_team_config()
+    # Set team mode to True only if multiple agents are defined in the configuration
+    team_mode = False if not team_config or len(team_config.agents) <= 1 else True
 
     atexit.register(cleanup_context)
 
     try:
-        global_agent.run()
+        start_api(team_config.get_current_agent())
+        agent_name = get_current_agent_name()
+
+        agent = Agent(agent_name, anthropic_client, team_mode)
+        print(f"\033[92mStarting Agent named {agent_name}.\033[0m")
+        agent.run()
     except Exception as e:
         error_message = f"Unhandled exception: {str(e)}"
         log_error(error_message)

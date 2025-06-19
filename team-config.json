@@ -1,0 +1,10 @@
+{
+  "agents": [
+    {
+      "name": "Claude",
+      "host": "http://0.0.0.0",
+      "port": 8081,
+      "isCurrentAgent": true
+    }
+  ]
+}

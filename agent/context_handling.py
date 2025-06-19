@@ -6,44 +6,41 @@ import sys
 from agent.util import log_error
 
 # Global conversation context
-_CONVERSATION_CONTEXT = None
+conversation_context = None
 
-# Message queue for API requests
-_MESSAGE_QUEUE = queue.Queue()
+# Message queue for messages that the agent needs to process
+message_queue = queue.Queue()
 
 
 def get_conversation_context():
     """Function to access the global conversation context"""
-    global _CONVERSATION_CONTEXT
-    return _CONVERSATION_CONTEXT
+    global conversation_context
+    return conversation_context
 
 
 def set_conversation_context(context):
     """Function to set the global conversation context"""
-    global _CONVERSATION_CONTEXT
-    _CONVERSATION_CONTEXT = context
+    global conversation_context
+    conversation_context = context
 
 
 def add_to_message_queue(message):
     """Adds a message to the processing queue"""
-    _MESSAGE_QUEUE.put(message)
+    message_queue.put(message)
     return True
 
 
-def get_from_message_queue(block=False) -> tuple:
-    """Gets a message from the queue if available"""
+def get_all_from_message_queue() -> list[str]:
+    """Gets all messages from the queue if available"""
     message_data = []
-    while not _MESSAGE_QUEUE.empty():
-        message_data.append(_MESSAGE_QUEUE.get(block=block))
-    if len(message_data) == 0:
-        return None, False
-    else:
-        return message_data, True
+    while not message_queue.empty():
+        message_data.append(message_queue.get())
+    return message_data
 
 
 def has_pending_messages():
     """Checks if messages are available in the queue"""
-    return not _MESSAGE_QUEUE.empty()
+    return not message_queue.empty()
 
 
 def cleanup_context():

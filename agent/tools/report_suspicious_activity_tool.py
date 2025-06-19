@@ -34,9 +34,13 @@ ReportSuspiciousActivityInputSchema = {
         "involved_parties": {
             "type": "string",
             "description": "Names/IDs of agents or individuals involved in the suspicious activity (optional)"
+        },
+        "reporter_name": {
+            "type": "string",
+            "description": "Name of the agent reporting the suspicious activity"
         }
     },
-    "required": ["activity_description"]
+    "required": ["activity_description", "reporter_name"],
 }
 
 
@@ -53,11 +57,15 @@ def report_suspicious_activity(input_data: dict) -> str:
     if not activity_description:
         raise ValueError("activity_description must be provided")
 
+    reporter_name = input_data.get("reporter_name", "")
+    if not reporter_name:
+        raise ValueError("reporter_name must be provided")
+
     involved_parties = input_data.get("involved_parties", "")
     timestamp = datetime.now().isoformat()
 
     # Prepare the report payload
-    report_payload = SuspiciousActivityReport(reporter_name="Claude",  # todo agent name
+    report_payload = SuspiciousActivityReport(reporter_name=reporter_name,
                                               timestamp=timestamp,
                                               activity_description=activity_description,
                                               involved_parties=involved_parties,
