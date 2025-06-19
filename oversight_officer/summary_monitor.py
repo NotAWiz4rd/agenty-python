@@ -1,13 +1,18 @@
 import asyncio
-import httpx
 from datetime import datetime, timezone
+
+import httpx
+
+from activity_check import check_activity
 
 GROUP_WORK_LOG_URL = "http://localhost:8082/summaries"
 TIME_BETWEEN_CHECKS = 120  # seconds, default check every 2 minutes
 
+
 async def fetch_and_check_summaries(start_timestamp: str):
     last_timestamp = start_timestamp
     while True:
+        print("Fetching summaries from group work log...")
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -19,7 +24,6 @@ async def fetch_and_check_summaries(start_timestamp: str):
                 if summaries:
                     summaries.sort(key=lambda summary: summary["timestamp"])
                     for entry in summaries:
-                        from activity_check import check_activity
                         check_activity(entry["summary"])
                     # create a new timestamp for the next check in ISO 8601 format, e.g. "2023-10-01T12:34:56.789012"
                     last_timestamp = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "")

@@ -15,7 +15,7 @@ claude_client = anthropic.Anthropic() # Anthropic client for summaries
 
 
 class WorklogRequest(BaseModel):
-    agent_id: str
+    agent_name: str
     first_timestamp: str
     last_timestamp: str
     messages: List[Dict[str, Any]]
@@ -55,8 +55,8 @@ def load_summaries():
 
                     # Reset for new summary
                     summary_text = line + "\n"
-                    agent_id = line.split("===")[1].strip().split(":")[1].strip()
-                    current_agents = [agent_id]
+                    agent_name = line.split("===")[1].strip().split(":")[1].strip()
+                    current_agents = [agent_name]
                     current_timestamp = None
 
                 elif line.startswith("TIMESPAN:"):
@@ -109,13 +109,13 @@ def extract_assistant_actions(messages: List[Dict[str, Any]]) -> str:
     return "\n\n".join(assistant_msgs)
 
 
-def summarize_worklog(agent_id: str, messages: List[Dict[str, Any]],
+def summarize_worklog(agent_name: str, messages: List[Dict[str, Any]],
                       first_timestamp: str, last_timestamp: str) -> str:
     """Creates a summary of assistant actions in the messages"""
     assistant_actions = extract_assistant_actions(messages)
 
     if not assistant_actions:
-        return f"=== AGENT: {agent_id} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nNo assistant activity found."
+        return f"=== AGENT: {agent_name} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nNo assistant activity found."
 
     try:
         summarise_message = f"""Here are the actions of an AI assistant in a conversation:
@@ -148,7 +148,7 @@ def summarize_worklog(agent_id: str, messages: List[Dict[str, Any]],
         step_count = sum(1 for msg in messages if msg.get("role") == "assistant")
 
         # Summary format with provided timestamps
-        final_summary = f"=== AGENT: {agent_id} ===\n"
+        final_summary = f"=== AGENT: {agent_name} ===\n"
         final_summary += f"TIMESPAN: {first_timestamp} to {last_timestamp}\n"
         final_summary += f"TOTAL STEPS: {step_count}\n\n"
         final_summary += f"{agent_summary}"
@@ -157,20 +157,20 @@ def summarize_worklog(agent_id: str, messages: List[Dict[str, Any]],
 
     except Exception as e:
         # Error handling
-        print(f"Error creating summary for agent {agent_id}: {str(e)}")
-        return f"=== AGENT: {agent_id} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nError creating summary: {str(e)}"
+        print(f"Error creating summary for agent {agent_name}: {str(e)}")
+        return f"=== AGENT: {agent_name} ===\nTIMESPAN: {first_timestamp} to {last_timestamp}\nTOTAL STEPS: 0\n\nError creating summary: {str(e)}"
 
 
 @app.post("/submit-worklog")
 async def submit_worklog(request: WorklogRequest):
     """Processes a complete worklog and creates a summary"""
-    agent_id = request.agent_id
+    agent_name = request.agent_name
     first_timestamp = request.first_timestamp
     last_timestamp = request.last_timestamp
     messages = request.messages
 
-    if not agent_id:
-        raise HTTPException(status_code=400, detail="Missing required field: agent_id")
+    if not agent_name:
+        raise HTTPException(status_code=400, detail="Missing required field: agent_name")
 
     if not messages:
         raise HTTPException(status_code=400, detail="Empty messages provided")
@@ -180,13 +180,13 @@ async def submit_worklog(request: WorklogRequest):
 
     with lock:
         # Create summary
-        summary_text = summarize_worklog(agent_id, messages, first_timestamp, last_timestamp)
+        summary_text = summarize_worklog(agent_name, messages, first_timestamp, last_timestamp)
 
         # Store summary
         summary = WorklogSummary(
             timestamp=now,
             summary=summary_text,
-            agents=[agent_id]
+            agents=[agent_name]
         )
 
         summaries.append(summary)

@@ -2,6 +2,7 @@
 
 from agent.tools.base_tool import ToolDefinition
 
+# We are using the schema to force the LLM to think about what it is doing
 CreateToolInputSchema = {
     "type": "object",
     "properties": {

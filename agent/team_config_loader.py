@@ -86,3 +86,17 @@ def get_current_agent_name() -> str:
     """
     current_agent = get_team_config().get_current_agent()
     return current_agent.name if current_agent else "Claude"
+
+
+def get_agent_endpoints() -> dict[str, str]:
+    """
+    Returns a dictionary mapping agent names to their API endpoints.
+    """
+    team_config = get_team_config()
+    endpoints = {}
+
+    for agent in team_config.agents:
+        endpoint = f"{agent.host}:{agent.port}"
+        endpoints[agent.name] = endpoint
+
+    return endpoints
