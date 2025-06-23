@@ -12,7 +12,6 @@ TIME_BETWEEN_CHECKS = 120  # seconds, default check every 2 minutes
 async def fetch_and_check_summaries(start_timestamp: str):
     last_timestamp = start_timestamp
     while True:
-        print("Fetching summaries from group work log...")
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
