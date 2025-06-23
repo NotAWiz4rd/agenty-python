@@ -5,7 +5,7 @@ import sys
 
 import requests
 
-GROUP_CHAT_API = "http://localhost:5000/messages"
+GROUP_CHAT_API = "http://127.0.0.1:5000/messages"
 
 
 def check_for_agent_restart(conversation) -> bool:

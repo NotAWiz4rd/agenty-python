@@ -43,7 +43,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, agent
 
     # If we've hit our consecutive tool limit, we'll force Claude to use the ask_human tool
     tool_choice = {"type": "auto"}
-    if consecutive_tool_count >= max_consecutive_tools:
+    if not is_team_mode and consecutive_tool_count >= max_consecutive_tools:
         print(f"\033[93mForcing human check-in after {max_consecutive_tools} consecutive tool calls\033[0m")
         # Find the ask_human tool
         ask_human_tool = next((t for t in tools if t.name == "ask_human"), None)

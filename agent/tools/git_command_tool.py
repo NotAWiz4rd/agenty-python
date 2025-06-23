@@ -14,7 +14,7 @@ GitCommandInputSchema = {
     "properties": {
         "command": {
             "type": "string",
-            "description": "The git command to execute (e.g., 'add', 'commit', 'status', 'push', etc.)"
+            "description": "The git command to execute (e.g., 'add', 'commit', 'status', 'push', 'pull' etc.)"
         },
         "args": {
             "type": "string",
