@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 import sys
-
+import traceback
 from agent.agent_work_log import send_work_log
 from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_all_from_message_queue, add_to_message_queue)
@@ -98,10 +98,8 @@ class Agent:
                     add_to_message_queue(formatted_summary)
         except Exception as e:
             # Log the error but don't crash the agent
-            import traceback
             error_msg = f"Error checking new summaries: {str(e)}\n{traceback.format_exc()}"
             log_error(error_msg)
-            print(f"Warning: Could not check for new summaries: {str(e)}")
 
     def run(self):
         # Try to load saved conversation context

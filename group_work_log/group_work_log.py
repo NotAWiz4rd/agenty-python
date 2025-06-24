@@ -32,11 +32,12 @@ class WorklogSummary(BaseModel):
 summaries: List[WorklogSummary] = []
 
 
-# Load existing summaries on startup
-def load_summaries():
+# create summary file at startup
+def store_summaries():
     print("New summary file created: ", SUMMARY_FILE)
     try:
-        with open(SUMMARY_FILE, "r", encoding="utf-8") as f:
+        with (open(SUMMARY_FILE, "r", encoding="utf-8") as
+              f):
             summary_text = ""
             current_agents = []
             current_timestamp = None
@@ -219,7 +220,7 @@ async def get_summaries(after_timestamp: Optional[str] = None):
 
 
 def main():
-    load_summaries()
+    store_summaries()
     uvicorn.run(app, host="0.0.0.0", port=8082)
 
 @app.on_event("startup")

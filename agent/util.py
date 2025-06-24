@@ -2,7 +2,7 @@ import json
 import os
 import pickle
 import sys
-from datetime import datetime, timezone
+
 import requests
 
 GROUP_CHAT_API = "http://localhost:5000/messages"
