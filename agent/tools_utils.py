@@ -5,6 +5,7 @@ import sys
 from agent.tools import (
     SendGroupMessageDefinition,
     SendAgentMessageDefinition,
+    CommandLineToolDefinition,
     CreateToolDefinition,
     AskHumanDefinition,
     CalculatorDefinition,
@@ -30,6 +31,7 @@ def get_tool_list(is_team_mode: bool) -> list:
         EditFileDefinition,
         DeleteFileDefinition,
         GitCommandDefinition,
+        CommandLineToolDefinition,
         RestartProgramDefinition,
         ResetContextDefinition,
         AskHumanDefinition,
