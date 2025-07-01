@@ -14,16 +14,16 @@ from agent.tools.base_tool import ToolDefinition
 # ------------------------------------------------------------------
 # Global process storage for persistent processes
 # ------------------------------------------------------------------
-ACTIVE_PROCESSES = {}
-PROCESS_COUNTER = 0
+active_processes = {}
+process_counter = 0
 AUTO_CLEANUP_ENABLED = True
 CLEANUP_THREAD = None
-CLEANUP_INTERVAL = 30  # seconds
+CLEANUP_INTERVAL = 60  # seconds
 
 # ------------------------------------------------------------------
-# Blacklist of dangerous commands
+# Blacklist of blocked commands
 # ------------------------------------------------------------------
-DANGEROUS_COMMANDS = {
+BLOCKED_COMMANDS = {
     "rm", "shutdown", "reboot", "halt", "poweroff", "mkfs", "dd", "init", "telinit", "kill", "killall", "passwd", "whoami"
 }
 
@@ -63,13 +63,13 @@ CommandLineInputSchema = {
 
 def command_line_tool(input_data: dict) -> str:
     """
-    Enhanced command line tool that supports:
+    Command line tool that supports:
     - Regular command execution (wait for completion)
     - Persistent processes (keep_alive=True)
     - Process management (list, kill, status, output)
     - Interactive input to running processes
     """
-    global ACTIVE_PROCESSES, PROCESS_COUNTER
+    global active_processes, process_counter
 
     # Ensure auto-cleanup is running
     ensure_auto_cleanup_running()
@@ -114,7 +114,7 @@ def command_line_tool(input_data: dict) -> str:
 
     # Blacklist check
     base_cmd = cmd_parts[0]
-    if base_cmd in DANGEROUS_COMMANDS:
+    if base_cmd in BLOCKED_COMMANDS:
         error_msg = f"Command '{base_cmd}' is not allowed for security reasons."
         return json.dumps({
             "success": False,
@@ -158,7 +158,7 @@ def execute_command_and_wait(cmd_parts, full_command):
 
 def start_persistent_process(cmd_parts, full_command):
     """Start a persistent process that keeps running"""
-    global PROCESS_COUNTER
+    global process_counter
 
     try:
         process = subprocess.Popen(
@@ -171,11 +171,11 @@ def start_persistent_process(cmd_parts, full_command):
             bufsize=0  # Unbuffered for real-time interaction
         )
 
-        PROCESS_COUNTER += 1
-        process_id = PROCESS_COUNTER
+        process_counter += 1
+        process_id = process_counter
 
         # Store process info
-        ACTIVE_PROCESSES[process_id] = {
+        active_processes[process_id] = {
             "process": process,
             "command": full_command,
             "start_time": time.time(),
@@ -216,7 +216,7 @@ def start_persistent_process(cmd_parts, full_command):
 
 def start_output_capture(process_id):
     """Start background threads to capture stdout and stderr"""
-    process_info = ACTIVE_PROCESSES[process_id]
+    process_info = active_processes[process_id]
     process = process_info["process"]
 
     def capture_stdout():
@@ -282,7 +282,7 @@ def handle_process_action(input_data):
 
 def list_processes():
     """List all active processes and cleanup dead ones"""
-    if not ACTIVE_PROCESSES:
+    if not active_processes:
         return json.dumps({
             "success": True,
             "processes": [],
@@ -292,7 +292,7 @@ def list_processes():
     processes = []
     dead_processes = []
     
-    for pid, info in ACTIVE_PROCESSES.items():
+    for pid, info in active_processes.items():
         process = info["process"]
         is_running = process.poll() is None
 
@@ -317,13 +317,13 @@ def list_processes():
 
 def kill_process(process_id):
     """Kill a specific process"""
-    if process_id not in ACTIVE_PROCESSES:
+    if process_id not in active_processes:
         return json.dumps({
             "success": False,
             "error": f"Process {process_id} not found"
         })
 
-    process_info = ACTIVE_PROCESSES[process_id]
+    process_info = active_processes[process_id]
     process = process_info["process"]
 
     if process.poll() is not None:
@@ -347,13 +347,13 @@ def kill_process(process_id):
 
 def get_process_status(process_id):
     """Get status of a specific process"""
-    if process_id not in ACTIVE_PROCESSES:
+    if process_id not in active_processes:
         return json.dumps({
             "success": False,
             "error": f"Process {process_id} not found"
         })
 
-    process_info = ACTIVE_PROCESSES[process_id]
+    process_info = active_processes[process_id]
     process = process_info["process"]
     is_running = process.poll() is None
 
@@ -371,13 +371,13 @@ def get_process_status(process_id):
 
 def get_process_output(process_id):
     """Get output from a specific process"""
-    if process_id not in ACTIVE_PROCESSES:
+    if process_id not in active_processes:
         return json.dumps({
             "success": False,
             "error": f"Process {process_id} not found"
         })
 
-    process_info = ACTIVE_PROCESSES[process_id]
+    process_info = active_processes[process_id]
     process = process_info["process"]
 
     # Check if process is still running
@@ -396,14 +396,14 @@ def get_process_output(process_id):
 
 def cleanup_dead_processes():
     """Remove finished processes from the active list"""
-    global ACTIVE_PROCESSES
+    global active_processes
     
     dead_processes = []
-    for pid, info in list(ACTIVE_PROCESSES.items()):
+    for pid, info in list(active_processes.items()):
         process = info["process"]
         if process.poll() is not None:
             dead_processes.append(pid)
-            del ACTIVE_PROCESSES[pid]
+            del active_processes[pid]
     
     return json.dumps({
         "success": True,
@@ -414,13 +414,13 @@ def cleanup_dead_processes():
 
 def send_input_to_process(process_id, input_text):
     """Send input to a running process with timeout"""
-    if process_id not in ACTIVE_PROCESSES:
+    if process_id not in active_processes:
         return json.dumps({
             "success": False,
             "error": f"Process {process_id} not found"
         })
 
-    process_info = ACTIVE_PROCESSES[process_id]
+    process_info = active_processes[process_id]
     process = process_info["process"]
 
     if process.poll() is not None:
@@ -484,10 +484,10 @@ def auto_cleanup_processes():
     
     while AUTO_CLEANUP_ENABLED:
         try:
-            if ACTIVE_PROCESSES:
+            if active_processes:
                 # Clean up dead processes
                 dead_processes = []
-                for pid, info in list(ACTIVE_PROCESSES.items()):
+                for pid, info in list(active_processes.items()):
                     process = info["process"]
                     if process.poll() is not None:
                         dead_processes.append(pid)
@@ -498,7 +498,7 @@ def auto_cleanup_processes():
                             process.stdin.close()
                         except:
                             pass
-                        del ACTIVE_PROCESSES[pid]
+                        del active_processes[pid]
                 
                 if dead_processes and len(dead_processes) > 0:
                     with open('/tmp/debug_command_tool.log', 'a') as f:
@@ -551,13 +551,13 @@ def stop_auto_cleanup():
 
 def emergency_cleanup():
     """Emergency cleanup function called on program exit"""
-    global ACTIVE_PROCESSES
+    global active_processes
     
-    if ACTIVE_PROCESSES:
+    if active_processes:
         with open('/tmp/debug_command_tool.log', 'a') as f:
-            f.write(f"Emergency cleanup: Terminating {len(ACTIVE_PROCESSES)} processes\n")
+            f.write(f"Emergency cleanup: Terminating {len(active_processes)} processes\n")
         
-        for pid, info in list(ACTIVE_PROCESSES.items()):
+        for pid, info in list(active_processes.items()):
             process = info["process"]
             try:
                 if process.poll() is None:  # Still running
@@ -573,7 +573,7 @@ def emergency_cleanup():
                 with open('/tmp/debug_command_tool.log', 'a') as f:
                     f.write(f"Error cleaning up process {pid}: {str(e)}\n")
         
-        ACTIVE_PROCESSES.clear()
+        active_processes.clear()
         stop_auto_cleanup()
 
 
@@ -612,7 +612,7 @@ def get_cleanup_status():
         "cleanup_thread_name": thread_name,
         "cleanup_thread_id": thread_id,
         "cleanup_interval": CLEANUP_INTERVAL,
-        "active_processes_count": len(ACTIVE_PROCESSES)
+        "active_processes_count": len(active_processes)
     })
 
 
@@ -659,7 +659,7 @@ start_auto_cleanup()
 # ------------------------------------------------------------------
 CommandLineToolDefinition = ToolDefinition(
     name="command_line_tool",
-    description="Enhanced command line tool with automatic process cleanup that can: 1) Execute commands and wait for completion (default), 2) Start persistent processes with keep_alive=True, 3) Manage running processes with process_action='list'/'kill'/'status'/'output'/'input'/'cleanup'/'cleanup_all'/'cleanup_status', 4) Send input to running processes using input_text parameter. Features automatic cleanup of dead processes every 30 seconds and emergency cleanup on program exit. Blocks dangerous commands for security.",
+    description="A command-line tool for safely executing and managing processes. It can run commands to completion or start persistent background processes, manage them (list, kill, check status, retrieve output, send input, and clean up), and automatically removes dead processes every 30 seconds or on program exit. Dangerous commands are blocked for security.",
     input_schema=CommandLineInputSchema,
     function=command_line_tool
 )
