@@ -7,7 +7,8 @@ from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_all_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
-from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat
+from agent.util import get_user_message, get_new_messages_from_group_chat, \
+    generate_restart_summary, save_conv_and_restart
 
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
@@ -51,7 +52,7 @@ class Agent:
         # Initialize counter for tracking consecutive tool calls without human interaction
         self.consecutive_tool_count = 0
         # Maximum number of consecutive tool calls allowed before forcing ask_human
-        self.max_consecutive_tools = 10
+        self.max_consecutive_tools = 20
         self.group_chat_messages = []
         self.last_logged_index = 0  # Last index of the group chat messages that were logged
         self.last_log_time = datetime.datetime.utcnow().isoformat()  # Last time a log was sent
@@ -61,6 +62,8 @@ class Agent:
         # For work log tracking
         self.steps_since_last_log = 0
         self.log_every_n_steps = 10  # Default: Send log every 10 steps
+
+        self.token_limit: int = 50_000
 
     def check_and_send_work_log(self, conversation):
         """Checks if a work log should be sent and sends it if necessary."""
@@ -90,22 +93,18 @@ class Agent:
         # Try to load saved conversation context
         conversation = load_conversation()
 
-        # Check if this is a restart initiated by the agent
-        agent_initiated_restart = False
         if conversation:
             print("Restored previous conversation context")
-            agent_initiated_restart = check_for_agent_restart(conversation)
             # If we're continuing after a restart, add a system message to inform the agent
-            if agent_initiated_restart:
-                conversation.append({
-                    "role": "user",
-                    "content": [{
-                        "type": "text",
-                        "text": "The program has restarted and is continuing execution automatically. Please continue from where you left off.",
-                        "cache_control": {"type": "ephemeral"}
-                    }]
-                })
-                self.read_user_input = False
+            conversation.append({
+                "role": "user",
+                "content": [{
+                    "type": "text",
+                    "text": "The program has restarted and is continuing execution automatically. Please continue from where you left off.",
+                    "cache_control": {"type": "ephemeral"}
+                }]
+            })
+            self.read_user_input = False
         else:
             conversation = []
 
@@ -123,13 +122,14 @@ class Agent:
             if message is not None:
                 conversation.append(message)
 
-            response = run_inference(conversation, self.llm_client, self.tools, self.consecutive_tool_count,
-                                     self.name, self.is_team_mode,
-                                     self.max_consecutive_tools)
+            response_content, token_usage = run_inference(conversation, self.llm_client, self.tools,
+                                                          self.consecutive_tool_count,
+                                                          self.name, self.is_team_mode,
+                                                          self.max_consecutive_tools)
             tool_results = []
 
             # print assistant text and collect any tool calls
-            for block in response.content:
+            for block in response_content:
                 if block.type == "text":
                     print(f"\033[93m{self.name}\033[0m: {block.text}")
                 elif block.type == "tool_use":
@@ -164,7 +164,7 @@ class Agent:
                         }),
                         "cache_control": {"type": "ephemeral"}
                     }
-                    for b in response.content
+                    for b in response_content
                 ]
             })
 
@@ -180,3 +180,15 @@ class Agent:
 
             # Check if a work log should be sent
             self.check_and_send_work_log(conversation)
+
+            # Check if we need to restart due to token limit
+            if token_usage >= self.token_limit:
+                print(f"\033[91mToken limit reached ({token_usage:,}/{self.token_limit:,}). Restarting...\033[0m")
+                generate_restart_summary(self.llm_client, conversation,
+                                         self.tools)  # this also adds the summary to the conversation
+                # filter conversation to keep only the last message
+                conversation = conversation[-1:]
+                set_conversation_context(conversation)
+
+                # Save the conversation context and restart
+                save_conv_and_restart(conversation)
