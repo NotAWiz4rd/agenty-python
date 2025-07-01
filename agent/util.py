@@ -8,6 +8,8 @@ import requests
 from agent.llm import run_inference
 
 GROUP_CHAT_API = "http://localhost:5000/messages"
+GROUP_WORK_LOG_URL = "http://localhost:8082/summaries"
+LAST_SUMMARY_TIMESTAMP = None
 
 
 def check_for_agent_restart(conversation) -> bool:
@@ -108,7 +110,24 @@ def get_new_messages_from_group_chat(current_messages: list) -> list:
     except Exception:
         # Silently fail to avoid disrupting the agent's normal operation
         pass
-    return []  # fallback if API call fails
+    return [] # fallback if API call fails
+
+def get_new_summaries():
+    """Get summaries from the group work log API"""
+    global LAST_SUMMARY_TIMESTAMP
+    try:
+        # Get summaries from the API endpoint
+        response = requests.get(GROUP_WORK_LOG_URL, params={"after_timestamp": LAST_SUMMARY_TIMESTAMP})
+        summaries = response.json()
+        if summaries:
+            print(f"\033[96mFound {len(summaries)} new summaries\033[0m")
+            print(f"\033[93mTimestamp of last summary: {summaries[-1].get('timestamp', 'N/A')}\033[0m")
+            LAST_SUMMARY_TIMESTAMP = summaries[-1].get('timestamp', LAST_SUMMARY_TIMESTAMP)
+            return summaries
+    except Exception:
+        # Silently fail to avoid disrupting the agent's normal operation
+        pass
+    return [] # fallback if API call fails
 
 
 def generate_restart_summary(llm_client, conversation, tools):
