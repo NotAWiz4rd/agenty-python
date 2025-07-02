@@ -363,6 +363,7 @@ def send_input_to_process(process_id, input_text):
             })
 
         if result[0] is True:
+            process_info["output_buffer"] = []  # Clear output buffer after sending input
             return json.dumps({
                 "success": True,
                 "message": f"Input sent to process {process_id}",
