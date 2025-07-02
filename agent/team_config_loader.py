@@ -3,9 +3,6 @@ import json
 import os
 from typing import List, Optional
 
-# Cache for the team configuration to avoid reloading it multiple times
-TEAM_CONFIG = None
-
 
 class AgentConfig:
     def __init__(self, name: str, host: str, port: int, is_current_agent: bool):
@@ -28,6 +25,10 @@ class TeamConfig:
     def get_current_agent(self) -> Optional[AgentConfig]:
         """Returns the agent marked as current agent, or None if not found."""
         return next((agent for agent in self.agents if agent.is_current_agent), None)
+
+
+# Cache for the team configuration to avoid reloading it multiple times
+TEAM_CONFIG: Optional[TeamConfig] = None
 
 
 def load_team_config(
@@ -93,7 +94,7 @@ def load_team_config(
         return TeamConfig([])
 
 
-def get_team_config(
+def initialize_team_config(
         docker_mode: bool = False,
         docker_agent_index: Optional[int] = None,
         docker_host_base: Optional[str] = None,
@@ -118,6 +119,20 @@ def get_team_config(
         )
 
     return TEAM_CONFIG
+
+
+def get_team_config() -> TeamConfig:
+    """
+    Retrieves the team configuration from the cache.
+
+    Returns:
+        The loaded TeamConfig, or raises an error.
+    """
+    global TEAM_CONFIG
+    if TEAM_CONFIG is not None:
+        return TEAM_CONFIG
+
+    raise ValueError("Team configuration has not been initialized. Call initialize_team_config() first.")
 
 
 def get_current_agent_name() -> str:

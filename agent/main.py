@@ -7,7 +7,7 @@ import anthropic
 from api import start_api
 from base_agent import Agent
 from context_handling import (cleanup_context)
-from team_config_loader import get_team_config, get_current_agent_name
+from team_config_loader import get_current_agent_name, initialize_team_config
 from util import log_error, get_agent_turn_delay_in_ms
 
 parser = argparse.ArgumentParser(description="Agent")
@@ -22,7 +22,7 @@ def main():
 
     anthropic_client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
 
-    team_config = get_team_config(args.docker_mode, args.docker_agent_index, args.docker_host_base)
+    team_config = initialize_team_config(args.docker_mode, args.docker_agent_index, args.docker_host_base)
     # Set team mode to True only if multiple agents are defined in the configuration
     team_mode = False if not team_config or len(team_config.agents) <= 1 else True
     number_of_agents = len(team_config.agents) if team_mode else 1
