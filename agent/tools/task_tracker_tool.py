@@ -15,29 +15,29 @@ TaskTrackerInputSchema = {
     "properties": {
         "action": {
             "type": "string",
-            "description": "Action to perform: add_task, list_tasks, update_status, get_details, assign_task",
+            "description": "Action to perform: add_task, list_tasks, update_status, get_details or assign_task.",
             "enum": ["add_task", "list_tasks", "update_status", "get_details", "assign_task"]
         },
         "description": {
             "type": "string",
-            "description": "Task description (required for add_task)"
+            "description": "Task description (required for add_task)."
         },
         "assigned_to": {
             "type": "string",
-            "description": "Agent name to assign task to (optional for add_task, required for assign_task)"
+            "description": "Agent name to assign task to (optional for add_task, required for assign_task)."
         },
         "task_id": {
             "type": "integer",
-            "description": "Task ID (required for update_status, get_details, assign_task)"
+            "description": "Task ID (required for update_status, get_details, assign_task)."
         },
         "status": {
             "type": "string",
-            "description": "New status (required for update_status)",
+            "description": "New status (required for update_status).",
             "enum": ["pending", "in-progress", "completed"]
         },
         "status_filter": {
             "type": "string",
-            "description": "Filter tasks by status (optional for list_tasks)",
+            "description": "Filter tasks by status (optional for list_tasks).",
             "enum": ["pending", "in-progress", "completed", "all"]
         }
     },
