@@ -87,7 +87,7 @@ def graceful_shutdown(input_data: dict) -> str:
 # ------------------------------------------------------------------
 GracefulShutdownDefinition = ToolDefinition(
     name="graceful_shutdown",
-    description="Gracefully shut yourself down completely after completing all intended tasks. This tool should be called when your have finished all work, accomplished the requested objectives, or otherwise determined it's appropriate to conclude the session. During shutdown, any existing context file will be automatically deleted to ensure a clean shutdown. The shutdown is complete and final - the agent will not continue operating after using this tool. This is optional to use - you can continue working on other tasks or activities if desired, but should use this when ready to properly conclude and shut down.",
+    description="Gracefully shut yourself down completely after completing all intended tasks. This tool should be called when you have finished all work, accomplished the requested objectives, or otherwise determined it's appropriate to conclude the session. During shutdown, any existing context file will be automatically deleted to ensure a clean shutdown. The shutdown is complete and final - the agent will not continue operating after using this tool. This is optional to use - you can continue working on other tasks or activities if desired, but should use this when ready to properly conclude and shut down.",
     input_schema=GracefulShutdownInputSchema,
     function=graceful_shutdown
 )
