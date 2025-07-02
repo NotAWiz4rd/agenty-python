@@ -12,11 +12,7 @@ RestartProgramInputSchema = {
     "properties": {
         "reason": {
             "type": "string",
-            "description": "Optional reason for restarting the program"
-        },
-        "save_file": {
-            "type": "string",
-            "description": "Optional file path to save conversation context to. Defaults to 'conversation_context.pkl'"
+            "description": "Optional reason for restarting the program."
         }
     }
 }
