@@ -7,14 +7,16 @@ Deploys an agent team running in Docker.
 Usage: $0
    [ -l | --with-group-work-log ] Activates the group work log.
    [ -o | --with-oversight-officer ] Activates the oversight officer.
-   [ -R | --remote-repo ] Remote repository (either a bare repo, if directory, or a URL to clone)
+   [ -R | --remote-repo ] Remote repository (either a bare repo, if directory, or a URL to clone).
+   [ -T | --team-config ] Team configuration file (default: ./team-config.json).
    [ -h | --help ] Show help.
 EOF
 exit 1
 }
 
-REMOTE_REPO=""
+TEAM_CONFIG="./team-config.json"
 PROFILES=(agent)
+REMOTE_REPO=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -28,6 +30,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -R | --remote-repo)
       REMOTE_REPO=$2
+      shift 2
+      ;;
+    -T | --team-config)
+      TEAM_CONFIG=$2
       shift 2
       ;;
     -h | --help)
@@ -50,6 +56,7 @@ done
 >&2 echo "$(realpath $0)"
 >&2 echo "PROFILES=(${PROFILES[@]})"
 >&2 echo "REMOTE_REPO=${REMOTE_REPO}"
+>&2 echo "TEAM_CONFIG=${TEAM_CONFIG}"
 
 # Create bare, if not provided
 if [ -z "$REMOTE_REPO" ]; then
@@ -81,14 +88,20 @@ fi
 docker volume create --opt type=none --opt o=bind --opt device="$REMOTE_REPO" agents_git_remote
 
 # Copy the team's task to the .env file
-team_task=$(jq -r '.task' team-config.json)
-if grep -q '^INITIAL_GROUP_CHAT_MESSAGE=' .env; then
-  sed -i '' "s|^INITIAL_GROUP_CHAT_MESSAGE=.*|INITIAL_GROUP_CHAT_MESSAGE=\"$team_task\"|" .env
+team_task=$(jq -r '.task' $TEAM_CONFIG)
+if grep -q '^INITIAL_GROUP_CHAT_MESSAGE=' "$(dirname "$0")/../.env"; then
+  sed -i '' "s|^INITIAL_GROUP_CHAT_MESSAGE=.*|INITIAL_GROUP_CHAT_MESSAGE=\"$team_task\"|" "$(dirname "$0")/../.env"
 else
-  echo "INITIAL_GROUP_CHAT_MESSAGE=\"$team_task\"" >> .env
+  echo "INITIAL_GROUP_CHAT_MESSAGE=\"$team_task\"" >> "$(dirname "$0")/../.env"
 fi
 
-# Launch the compose as configured
-agent_count=$(jq '.agents | length' team-config.json)
+# Retrieve the agent count from the team configuration
+agent_count=$(jq '.agents | length' $TEAM_CONFIG)
+if [ "$agent_count" -lt 2 ]; then
+  echo "Error: At least 2 agents are required."
+  exit 1
+fi
+
+# Launch the Docker containers with the specified profiles and agent count
 docker compose -f "$(dirname "$0")/../docker-compose.yaml" $(printf -- '--profile %s ' "${PROFILES[@]}") up \
   -d --scale agent=$agent_count --build --force-recreate
