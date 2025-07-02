@@ -8,7 +8,6 @@ from agent.tools import (
     CommandLineToolDefinition,
     CreateToolDefinition,
     AskHumanDefinition,
-    CalculatorDefinition,
     DeleteFileDefinition,
     EditFileDefinition,
     GitCommandDefinition,
@@ -35,7 +34,6 @@ def get_tool_list(is_team_mode: bool) -> list:
         RestartProgramDefinition,
         ResetContextDefinition,
         AskHumanDefinition,
-        CalculatorDefinition,
         CreateToolDefinition,
         TaskTrackerDefinition,
     ]
