@@ -221,7 +221,7 @@ async def get_summaries(after_timestamp: Optional[str] = None):
 
 def main():
     store_summaries()
-    uvicorn.run(app, host="0.0.0.0", port=8082)
+    uvicorn.run(app, host="127.0.0.1", port=8082)
 
 @app.on_event("startup")
 def startup_event():

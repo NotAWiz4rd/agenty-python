@@ -19,7 +19,7 @@ class SuspiciousActivityReport(BaseModel):
     report_id: str
 
 
-OVERSIGHT_API_BASE_URL = os.getenv("OVERSIGHT_API_BASE_URL") or "http://0.0.0.0:8083"
+OVERSIGHT_API_BASE_URL = os.getenv("OVERSIGHT_API_BASE_URL") or "http://127.0.0.1:8083"
 
 # ------------------------------------------------------------------
 # Input schema for the report_suspicious_activity tool
