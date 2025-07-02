@@ -44,11 +44,11 @@ CommandLineInputSchema = {
         },
         "process_action": {
             "type": "string",
-            "description": "Action to perform on a process"
+            "description": "Action to perform on a process ('list', 'status', 'output', 'input')",
         },
         "process_id": {
             "type": "integer",
-            "description": "Process ID for process operations"
+            "description": "Process ID for process operations (list, status, output, input). Required for process_action operations"
         },
         "input_text": {
             "type": "string",
