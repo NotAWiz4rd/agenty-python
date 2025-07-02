@@ -216,7 +216,4 @@ class Agent:
 
             # delay the next turn if configured to prevent running into rate limits
             if self.turn_delay > 0:
-                print(f"\033[93mDelaying next turn by {self.turn_delay} ms\033[0m")
-                print(time.time_ns() // 1_000_000)  # print current time in milliseconds
                 time.sleep(self.turn_delay / 1000)
-                print(time.time_ns() // 1_000_000)  # print current time in milliseconds after delay
