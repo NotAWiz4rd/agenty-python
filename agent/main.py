@@ -8,7 +8,7 @@ from agent.api import start_api
 from agent.base_agent import Agent
 from agent.context_handling import (cleanup_context)
 from agent.team_config_loader import get_team_config, get_current_agent_name
-from agent.util import log_error
+from agent.util import log_error, get_agent_turn_delay_in_ms
 
 
 def main():
@@ -17,6 +17,7 @@ def main():
     team_config = get_team_config()
     # Set team mode to True only if multiple agents are defined in the configuration
     team_mode = False if not team_config or len(team_config.agents) <= 1 else True
+    number_of_agents = len(team_config.agents) if team_mode else 1
 
     atexit.register(cleanup_context)
 
@@ -24,7 +25,7 @@ def main():
         start_api(team_config.get_current_agent())
         agent_name = get_current_agent_name()
 
-        agent = Agent(agent_name, anthropic_client, team_mode)
+        agent = Agent(agent_name, anthropic_client, team_mode, turn_delay=get_agent_turn_delay_in_ms(number_of_agents))
         print(f"\033[92mStarting Agent named {agent_name}.\033[0m")
         agent.run()
     except Exception as e:
