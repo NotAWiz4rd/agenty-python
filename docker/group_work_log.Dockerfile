@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN chmod +x run.py
 
 EXPOSE 8000
-ENTRYPOINT ["python", "run.py", "--port", "8000"]
+ENTRYPOINT ["python", "-u", "run.py", "--port", "8000"]

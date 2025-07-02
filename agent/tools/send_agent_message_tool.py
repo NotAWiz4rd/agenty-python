@@ -30,13 +30,19 @@ SendAgentMessageInputSchema = {
 }
 
 # we only need to load this once
-AGENT_ENDPOINTS = get_agent_endpoints()
+AGENT_ENDPOINTS = None
 
 
 def send_agent_message(input_data: dict) -> str:
     """
     Sends a direct message to a specific agent via their API endpoint.
     """
+
+    # we only need to load this once
+    global AGENT_ENDPOINTS
+    if AGENT_ENDPOINTS is None:
+        AGENT_ENDPOINTS = get_agent_endpoints()
+
     # Allow raw JSON string or parsed dict
     if isinstance(input_data, str):
         input_data = json.loads(input_data)
