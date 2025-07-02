@@ -42,7 +42,7 @@ Then you can use the agent team using the following scripts:
 
 - `scripts/deploy_agent_team.sh`: Deploys the agent team using Docker Compose.
 - `scripts/pause_agent_team.sh`: Pauses the agent team's work (by stopping their containers).
-- `scripts/resumt_agent_team.sh`: Resumes the agent team's work (by starting their containers again).
+- `scripts/resume_agent_team.sh`: Resumes the agent team's work (by starting their containers again).
 - `scripts/undeploy_agent_team.sh`: Undeploys the agent team and cleans up Docker resources.
 
 ## Available Tools

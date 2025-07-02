@@ -77,7 +77,7 @@ if ! git --git-dir="$REMOTE_REPO/.git" rev-parse --is-bare-repository | grep -q 
 fi
 
 # Undeploy the existing Docker containers, before volume creation
-docker compose -f docker-compose.yaml --profile "*" down
+docker compose -f "$(dirname "$0")/../docker-compose.yaml" --profile "*" down
 
 # Remove previous volume if it exists
 if docker volume inspect agents_git_remote &>/dev/null; then
