@@ -52,7 +52,7 @@ CommandLineInputSchema = {
         },
         "input_text": {
             "type": "string",
-            "description": "Text to send to a running process's stdin"
+            "description": "Text to send to a running process's stdin. You need to specify process_id and process_action=input",
         }
     },
     "required": []
