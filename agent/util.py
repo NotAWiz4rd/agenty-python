@@ -164,6 +164,6 @@ def generate_restart_summary(llm_client, conversation, tools):
         })
 
 
-def get_agent_turn_delay_in_ms(number_of_agents: int = 1) -> int:
+def get_agent_turn_delay_in_ms(number_of_agents: int = 1, ms_per_additional_agent: int = 2000) -> int:
     """Get the agent's turn delay in milliseconds based on the number of agents in the team."""
-    return (number_of_agents - 1) * 2000  # 2 seconds per additional agent
+    return (number_of_agents - 1) * ms_per_additional_agent
