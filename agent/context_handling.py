@@ -3,7 +3,7 @@ import pickle
 import queue
 import sys
 
-from agent.util import log_error
+from util import log_error
 
 # Global conversation context
 conversation_context = None

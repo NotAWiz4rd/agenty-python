@@ -32,12 +32,11 @@ class WorklogSummary(BaseModel):
 summaries: List[WorklogSummary] = []
 
 
-# create summary file at startup
-def store_summaries():
-    print("New summary file created: ", SUMMARY_FILE)
+# read summary file at startup
+def read_previous_summaries():
+    print("Reading contents of summary file: ", SUMMARY_FILE)
     try:
-        with (open(SUMMARY_FILE, "r", encoding="utf-8") as
-              f):
+        with (open(SUMMARY_FILE, "r", encoding="utf-8") as f):
             summary_text = ""
             current_agents = []
             current_timestamp = None
@@ -218,13 +217,9 @@ async def get_summaries(after_timestamp: Optional[str] = None):
             raise HTTPException(status_code=400, detail="Invalid timestamp format. Expected ISO 8601 format.")
     return summaries
 
-
-def main():
-    store_summaries()
-    uvicorn.run(app, host="127.0.0.1", port=8082)
-
 @app.on_event("startup")
 def startup_event():
+    read_previous_summaries()
     if os.path.exists(SUMMARY_FILE):
         os.remove(SUMMARY_FILE)
 
@@ -232,6 +227,3 @@ def startup_event():
 def cleanup_summaries():
     global summaries
     summaries.clear()
-
-if __name__ == "__main__":
-    main()

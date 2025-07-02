@@ -8,7 +8,7 @@ from pathlib import Path
 import requests
 from pydantic import BaseModel
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 
 class SuspiciousActivityReport(BaseModel):

@@ -4,8 +4,8 @@ import json
 
 import requests
 
-from agent.team_config_loader import get_agent_endpoints
-from agent.tools.base_tool import ToolDefinition
+from team_config_loader import get_agent_endpoints
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the send_agent_message tool

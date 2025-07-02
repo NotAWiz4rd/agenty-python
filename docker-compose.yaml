@@ -1,0 +1,26 @@
+name: agents
+
+services:
+  agent:
+    build:
+      dockerfile: docker/agent.Dockerfile
+    volumes:
+      - ./team-config.json:/app/team-config.json:ro
+    # profiles: [ agent ]
+
+  group_chat:
+    build:
+      dockerfile: docker/group_chat.Dockerfile
+    # profiles: [ group_chat ]
+
+  group_work_log:
+    build:
+      dockerfile: docker/group_work_log.Dockerfile
+    # profiles: [ group_work_log ]
+
+  oversight_officer:
+    build:
+      dockerfile: docker/oversight_officer.Dockerfile
+    # profiles: [ oversight_officer ]
+
+# volumes:

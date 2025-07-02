@@ -4,11 +4,11 @@ import sys
 
 import anthropic
 
-from agent.api import start_api
-from agent.base_agent import Agent
-from agent.context_handling import (cleanup_context)
-from agent.team_config_loader import get_team_config, get_current_agent_name
-from agent.util import log_error, get_agent_turn_delay_in_ms
+from api import start_api
+from base_agent import Agent
+from context_handling import (cleanup_context)
+from team_config_loader import get_team_config, get_current_agent_name
+from util import log_error, get_agent_turn_delay_in_ms
 
 
 def main():

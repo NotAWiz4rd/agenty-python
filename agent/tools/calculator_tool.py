@@ -6,7 +6,7 @@
 import json
 import math
 import operator
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the calculator tool

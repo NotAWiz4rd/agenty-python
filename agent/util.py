@@ -5,7 +5,7 @@ import sys
 
 import requests
 
-from agent.llm import run_inference
+from llm import run_inference
 
 GROUP_CHAT_API = "http://127.0.0.1:5000/messages"
 GROUP_WORK_LOG_URL = "http://127.0.0.1:8082/summaries"

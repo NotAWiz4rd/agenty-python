@@ -2,7 +2,7 @@
 
 import json
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 
 def get_user_message():

@@ -4,12 +4,12 @@ import sys
 import time
 import traceback
 
-from agent.agent_work_log import send_work_log
-from agent.context_handling import (set_conversation_context, load_conversation,
+from agent_work_log import send_work_log
+from context_handling import (set_conversation_context, load_conversation,
                                     get_all_from_message_queue, add_to_message_queue)
-from agent.llm import run_inference
-from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
-from agent.util import get_user_message, get_new_messages_from_group_chat, get_new_summaries, log_error, \
+from llm import run_inference
+from tools_utils import get_tool_list, execute_tool, deal_with_tool_results
+from util import get_user_message, get_new_messages_from_group_chat, get_new_summaries, log_error, \
     generate_restart_summary, save_conv_and_restart
 
 

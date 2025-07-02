@@ -1,6 +1,6 @@
 # create_tool_tool.py
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # We are using the schema to force the LLM to think about what it is doing
 CreateToolInputSchema = {

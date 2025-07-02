@@ -4,7 +4,7 @@ import json
 
 import requests
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the send_group_message tool

@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input schema for the reset_context tool

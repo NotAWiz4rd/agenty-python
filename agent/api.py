@@ -4,8 +4,8 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from agent.context_handling import add_to_message_queue
-from agent.team_config_loader import AgentConfig
+from context_handling import add_to_message_queue
+from team_config_loader import AgentConfig
 
 # Initialize FastAPI app and agent
 app = FastAPI()

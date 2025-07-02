@@ -21,6 +21,10 @@ class TeamConfig:
 
     def get_current_agent(self) -> Optional[AgentConfig]:
         """Returns the agent marked as current agent, or None if not found."""
+        agent_index = os.environ.get("agent_index")
+        if agent_index is not None and 0 <= int(agent_index) < len(self.agents):
+            return self.agents[int(agent_index)]
+
         return next((agent for agent in self.agents if agent.is_current_agent), None)
 
 
