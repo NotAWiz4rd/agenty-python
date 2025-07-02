@@ -1,14 +1,12 @@
 # command_line_tool.py
 
 import json
-import subprocess
-import shlex
 import os
+import shlex
+import subprocess
 import threading
 import time
-import atexit
-import signal
-from contextlib import contextmanager
+
 from agent.tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
@@ -21,7 +19,8 @@ process_counter = 0
 # Blacklist of blocked commands
 # ------------------------------------------------------------------
 BLOCKED_COMMANDS = {
-    "rm", "shutdown", "reboot", "halt", "poweroff", "mkfs", "dd", "init", "telinit", "kill", "killall", "passwd", "whoami"
+    "rm", "shutdown", "reboot", "halt", "poweroff", "mkfs", "dd", "init", "telinit", "kill", "killall", "passwd",
+    "whoami"
 }
 
 # ------------------------------------------------------------------
@@ -58,6 +57,7 @@ CommandLineInputSchema = {
     "required": []
 }
 
+
 def command_line_tool(input_data: dict) -> str:
     """
     Command line tool that supports:
@@ -74,7 +74,7 @@ def command_line_tool(input_data: dict) -> str:
     process_action = input_data.get("process_action")
     process_id = input_data.get("process_id")
     input_text = input_data.get("input_text")
-    
+
     # If we have input_text and process_id but no explicit action, assume "input"
     if input_text and process_id and not process_action:
         input_data["process_action"] = "input"
@@ -172,7 +172,7 @@ def start_persistent_process(cmd_parts, full_command):
 
         # Give the process a moment to start
         time.sleep(0.1)
-        
+
         # Check if process is still running after startup
         if process.poll() is not None:
             return json.dumps({
@@ -189,7 +189,7 @@ def start_persistent_process(cmd_parts, full_command):
             "message": f"Process started with ID {process_id}. Use process_action to interact with it."
         }
         return json.dumps(result)
-    
+
     except Exception as e:
         return json.dumps({
             "success": False,
@@ -308,6 +308,12 @@ def get_process_output(process_id):
     # Check if process is still running
     is_running = process.poll() is None
 
+    output_lines = process_info["output_buffer"]
+    debug_color = "\033[36m"  # Cyan
+    reset_color = "\033[0m"  # Reset to default
+    for line in output_lines:
+        print(f"{debug_color}{line}{reset_color}")
+
     return json.dumps({
         "success": True,
         "process_id": process_id,
@@ -348,6 +354,7 @@ def send_input_to_process(process_id, input_text):
 
         # Create a thread to send input with timeout
         result = [None]
+
         def target():
             result[0] = send_input()
 
@@ -380,6 +387,7 @@ def send_input_to_process(process_id, input_text):
             "success": False,
             "error": f"Failed to send input to process {process_id}: {str(e)}"
         })
+
 
 # ------------------------------------------------------------------
 # ToolDefinition instance
