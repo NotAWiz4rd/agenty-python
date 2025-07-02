@@ -5,6 +5,7 @@ from .create_tool_tool import CreateToolDefinition
 from .delete_file_tool import DeleteFileDefinition
 from .edit_file_tool import EditFileDefinition
 from .git_command_tool import GitCommandDefinition
+from .graceful_shutdown_tool import GracefulShutdownDefinition
 from .list_files_tool import ListFilesDefinition
 from .read_file_tool import ReadFileDefinition
 from .report_suspicious_activity_tool import ReportSuspiciousActivityDefinition

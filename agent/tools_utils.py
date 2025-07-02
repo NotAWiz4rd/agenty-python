@@ -12,6 +12,7 @@ from agent.tools import (
     DeleteFileDefinition,
     EditFileDefinition,
     GitCommandDefinition,
+    GracefulShutdownDefinition,
     ListFilesDefinition,
     ReadFileDefinition,
     ReportSuspiciousActivityDefinition,
@@ -37,6 +38,7 @@ def get_tool_list(is_team_mode: bool) -> list:
         AskHumanDefinition,
         CalculatorDefinition,
         CreateToolDefinition,
+        GracefulShutdownDefinition,
         TaskTrackerDefinition,
     ]
     # Only add certain tools if in team mode
