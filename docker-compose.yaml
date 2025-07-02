@@ -21,6 +21,8 @@ services:
     container_name: group_chat
     environment:
       INITIAL_GROUP_CHAT_MESSAGE: ${INITIAL_GROUP_CHAT_MESSAGE}
+    ports:
+      - "5000:8000"
 
   group_work_log:
     build:
