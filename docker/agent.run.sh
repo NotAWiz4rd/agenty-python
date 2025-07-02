@@ -11,4 +11,5 @@ base_host=$(echo $hostname | sed 's/\(.*\)-.*/\1/')
 host_index=$(echo $hostname | sed 's/.*-//')
 agent_index=$((host_index - 1))
 
+git clone /remote /app/work_repo
 python -u main.py --docker_mode True --docker_agent_index $agent_index --docker_host_base $base_host

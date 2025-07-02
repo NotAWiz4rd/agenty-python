@@ -1,6 +1,6 @@
 FROM python:3.12-alpine
 
-RUN apk add bind-tools jq
+RUN apk add bind-tools git
 WORKDIR /app
 
 COPY ../agent /app
