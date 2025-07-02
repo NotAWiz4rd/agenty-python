@@ -7,7 +7,8 @@ from pydantic import BaseModel
 
 app = FastAPI()
 MSG_FILE = "chat_messages.txt"
-INITIAL_MESSAGE = "Welcome to the group chat! Please introduce yourself." # todo add work order here
+INITIAL_MESSAGE = "Welcome to the group chat! Feel free to introduce yourself or do whatever until your team is given a task. Once you are given a task, please make sure to work within the work_repo, committing, pushing and pulling regularly, so that you can actually work together as a team."
+#RPG_GAME_INITIAL_MESSAGE = "Welcome to the group chat! Your task is written in the task/rpg-game.md file. Commit and push (and pull) within the work_repo, otherwise your team won't be able to see any changes you make. Remember to work together in the work_repo and commit your changes regularly to avoid merge conflicts!"
 lock = threading.Lock()  # For thread-safe writes
 
 
