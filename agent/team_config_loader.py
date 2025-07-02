@@ -24,7 +24,7 @@ class TeamConfig:
         return next((agent for agent in self.agents if agent.is_current_agent), None)
 
 
-def load_team_config(config_path: str = "") -> TeamConfig:
+def load_team_config(config_path: str = "team-config.json") -> TeamConfig:
     """
     Loads the team configuration from the specified JSON file.
 
@@ -50,7 +50,7 @@ def load_team_config(config_path: str = "") -> TeamConfig:
         for agent_data in config_data.get('agents', []):
             agent = AgentConfig(
                 name=agent_data.get('name', 'Claude'),
-                host=agent_data.get('host', 'http://0.0.0.0'),
+                host=agent_data.get('host', '127.0.0.1'),
                 port=agent_data.get('port', 8081),
                 is_current_agent=agent_data.get('isCurrentAgent', False)
             )
@@ -96,7 +96,7 @@ def get_agent_endpoints() -> dict[str, str]:
     endpoints = {}
 
     for agent in team_config.agents:
-        endpoint = f"{agent.host}:{agent.port}"
+        endpoint = f"http://{agent.host}:{agent.port}"
         endpoints[agent.name] = endpoint
 
     return endpoints

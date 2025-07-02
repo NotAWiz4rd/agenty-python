@@ -31,8 +31,19 @@ def remove_all_but_last_three_cache_controls(conversation):
     return json.loads(first_part + last_part)
 
 
-def run_inference(conversation, llm_client, tools, consecutive_tool_count, agent_name: str = "Claude", is_team_mode: bool = False,
-                  max_consecutive_tools=10):
+def run_inference(conversation, llm_client, tools, consecutive_tool_count = 0, agent_name: str = "Claude", is_team_mode: bool = False,
+                  max_consecutive_tools=10) -> tuple[dict, int]:
+    """
+    Runs inference using the LLM client with the provided conversation and tools.
+    :param conversation:
+    :param llm_client:
+    :param tools:
+    :param consecutive_tool_count:
+    :param agent_name:
+    :param is_team_mode:
+    :param max_consecutive_tools:
+    :return: The LLM response and the total token usage (excluding cached tokens!).
+    """
     tools_param = []
     for t in tools:
         tools_param.append({
@@ -43,7 +54,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, agent
 
     # If we've hit our consecutive tool limit, we'll force Claude to use the ask_human tool
     tool_choice = {"type": "auto"}
-    if consecutive_tool_count >= max_consecutive_tools:
+    if not is_team_mode and consecutive_tool_count >= max_consecutive_tools:
         print(f"\033[93mForcing human check-in after {max_consecutive_tools} consecutive tool calls\033[0m")
         # Find the ask_human tool
         ask_human_tool = next((t for t in tools if t.name == "ask_human"), None)
@@ -57,7 +68,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, agent
 
     conversation = remove_all_but_last_three_cache_controls(conversation)
 
-    return llm_client.messages.create(
+    response = llm_client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=9999,
         system=get_system_prompt(agent_name, is_team_mode),  # Pass system prompt as a top-level parameter
@@ -65,3 +76,15 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count, agent
         tool_choice=tool_choice,
         tools=tools_param
     )
+
+    if not response:
+        raise ValueError("LLM response is empty. Please check your LLM client configuration.")
+
+    total_token_usage = response.usage.input_tokens + response.usage.output_tokens
+
+    # todo this is useful for testing but can/should be removed at some point
+    print(f"\033[96mToken usage: {total_token_usage}\033[0m")
+
+
+    # Return both the response and token usage (excluding cached tokens)
+    return response.content, total_token_usage
