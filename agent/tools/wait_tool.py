@@ -11,7 +11,7 @@ WaitInputSchema = {
         "seconds": {
             "type": "number",
             "minimum": 0,
-            "description": "The number of seconds to wait"
+            "description": "The number of seconds to wait."
         }
     },
     "required": ["seconds"]

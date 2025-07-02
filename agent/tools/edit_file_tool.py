@@ -12,7 +12,7 @@ EditFileInputSchema = {
     "properties": {
         "path": {
             "type": "string",
-            "description": "The path to the file"
+            "description": "The path to the file. If the file does not exist, it will be created if old_str is empty."
         },
         "old_str": {
             "type": "string",
@@ -22,7 +22,8 @@ EditFileInputSchema = {
             "type": "string",
             "description": "Text to replace old_str with. Must be different from old_str. Must never be empty."
         }
-    }
+    },
+    "required": ["path", "old_str", "new_str"],
 }
 
 

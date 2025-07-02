@@ -7,8 +7,8 @@ import requests
 
 from agent.llm import run_inference
 
-GROUP_CHAT_API = "http://localhost:5000/messages"
-GROUP_WORK_LOG_URL = "http://localhost:8082/summaries"
+GROUP_CHAT_API = "http://127.0.0.1:5000/messages"
+GROUP_WORK_LOG_URL = "http://127.0.0.1:8082/summaries"
 LAST_SUMMARY_TIMESTAMP = None
 
 
@@ -110,7 +110,8 @@ def get_new_messages_from_group_chat(current_messages: list) -> list:
     except Exception:
         # Silently fail to avoid disrupting the agent's normal operation
         pass
-    return [] # fallback if API call fails
+    return []  # fallback if API call fails
+
 
 def get_new_summaries():
     """Get summaries from the group work log API"""
@@ -127,7 +128,7 @@ def get_new_summaries():
     except Exception:
         # Silently fail to avoid disrupting the agent's normal operation
         pass
-    return [] # fallback if API call fails
+    return []  # fallback if API call fails
 
 
 def generate_restart_summary(llm_client, conversation, tools):
@@ -161,3 +162,8 @@ def generate_restart_summary(llm_client, conversation, tools):
             "role": "assistant",
             "content": "AUTO-RESTART because of token limit: LLM summary failed."
         })
+
+
+def get_agent_turn_delay_in_ms(number_of_agents: int = 1, ms_per_additional_agent: int = 2000) -> int:
+    """Get the agent's turn delay in milliseconds based on the number of agents in the team."""
+    return (number_of_agents - 1) * ms_per_additional_agent

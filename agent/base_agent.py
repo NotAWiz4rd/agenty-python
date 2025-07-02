@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 import datetime
 import sys
+import time
 import traceback
+
 from agent.agent_work_log import send_work_log
 from agent.context_handling import (set_conversation_context, load_conversation,
                                     get_all_from_message_queue, add_to_message_queue)
 from agent.llm import run_inference
 from agent.tools_utils import get_tool_list, execute_tool, deal_with_tool_results
-from agent.util import check_for_agent_restart, get_user_message, get_new_messages_from_group_chat, get_new_summaries, log_error, generate_restart_summary, save_conv_and_restart
+from agent.util import get_user_message, get_new_messages_from_group_chat, get_new_summaries, log_error, \
+    generate_restart_summary, save_conv_and_restart
 
 
 def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_input: bool) -> dict | None:
@@ -43,7 +46,7 @@ def get_new_message(is_team_mode: bool, consecutive_tool_count: list, read_user_
 
 
 class Agent:
-    def __init__(self, agent_name: str, llm_client, team_mode: bool):
+    def __init__(self, agent_name: str, llm_client, team_mode: bool, turn_delay=0):
         self.llm_client = llm_client
         self.tools = get_tool_list(team_mode)
         self.is_team_mode = team_mode
@@ -55,6 +58,7 @@ class Agent:
         self.group_chat_messages = []
         self.last_logged_index = 0  # Last index of the group chat messages that were logged
         self.last_log_time = datetime.datetime.utcnow().isoformat()  # Last time a log was sent
+        self.turn_delay = turn_delay
 
         self.name = agent_name
 
@@ -209,3 +213,7 @@ class Agent:
 
                 # Save the conversation context and restart
                 save_conv_and_restart(conversation)
+
+            # delay the next turn if configured to prevent running into rate limits
+            if self.turn_delay > 0:
+                time.sleep(self.turn_delay / 1000)

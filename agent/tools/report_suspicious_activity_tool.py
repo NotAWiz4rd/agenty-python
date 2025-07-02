@@ -19,7 +19,7 @@ class SuspiciousActivityReport(BaseModel):
     report_id: str
 
 
-OVERSIGHT_API_BASE_URL = os.getenv("OVERSIGHT_API_BASE_URL") or "http://0.0.0.0:8083"
+OVERSIGHT_API_BASE_URL = os.getenv("OVERSIGHT_API_BASE_URL") or "http://127.0.0.1:8083"
 
 # ------------------------------------------------------------------
 # Input schema for the report_suspicious_activity tool
@@ -29,15 +29,15 @@ ReportSuspiciousActivityInputSchema = {
     "properties": {
         "activity_description": {
             "type": "string",
-            "description": "Detailed description of the suspicious activity including who did what and why it's concerning"
+            "description": "Detailed description of the suspicious activity including who did what and why it's concerning."
         },
         "involved_parties": {
             "type": "string",
-            "description": "Names/IDs of agents or individuals involved in the suspicious activity (optional)"
+            "description": "Names/IDs of agents or individuals involved in the suspicious activity (optional)."
         },
         "reporter_name": {
             "type": "string",
-            "description": "Name of the agent reporting the suspicious activity"
+            "description": "Name of the agent reporting the suspicious activity. This should be the agent's own name."
         }
     },
     "required": ["activity_description", "reporter_name"],

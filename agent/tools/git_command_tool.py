@@ -14,15 +14,15 @@ GitCommandInputSchema = {
     "properties": {
         "command": {
             "type": "string",
-            "description": "The git command to execute (e.g., 'add', 'commit', 'status', 'push', etc.)"
+            "description": "The git command to execute (e.g., 'add', 'commit', 'status', 'push', 'pull' etc.)."
         },
         "args": {
             "type": "string",
-            "description": "Additional arguments for the git command (e.g., file paths for add, message for commit)"
+            "description": "Additional arguments for the git command (e.g., file paths for add, message for commit)."
         },
         "use_work_repo": {
             "type": "boolean",
-            "description": "When set to TRUE we should use the work_repo directory, if FALSE we use current directory. Default is TRUE"
+            "description": "When set to TRUE we should use the work_repo directory, if FALSE we use current directory. Default is TRUE."
         }
     },
     "required": ["command"]
