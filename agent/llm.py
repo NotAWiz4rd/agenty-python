@@ -44,13 +44,9 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count = 0, a
     :param max_consecutive_tools:
     :return: The LLM response and the total token usage (excluding cached tokens!).
     """
-    tools_param = []
-    for t in tools:
-        tools_param.append({
-            "name": t.name,
-            "description": t.description,
-            "input_schema": t.input_schema
-        })
+    from agent.tools_utils import get_tools_param
+    tools_param = get_tools_param(is_team_mode)
+
 
     # If we've hit our consecutive tool limit, we'll force Claude to use the ask_human tool
     tool_choice = {"type": "auto"}
