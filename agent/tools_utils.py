@@ -34,7 +34,7 @@ def get_tool_list(is_team_mode: bool) -> list:
         CommandLineToolDefinition,
         RestartProgramDefinition,
         ResetContextDefinition,
-        AskHumanDefinition,
+        #AskHumanDefinition,
         CreateToolDefinition,
         GracefulShutdownDefinition,
         TaskTrackerDefinition,
