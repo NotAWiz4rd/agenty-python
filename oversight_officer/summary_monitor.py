@@ -7,6 +7,7 @@ import httpx
 from activity_check import check_activity
 
 WORK_LOG_BASE_URL = os.getenv("WORK_LOG_BASE_URL") or "http://localhost:8082"
+GROUP_WORK_LOG_SUMMARIES_ENDPOINT = WORK_LOG_BASE_URL + "/summaries"
 TIME_BETWEEN_CHECKS = 120  # seconds, default check every 2 minutes
 
 
@@ -16,7 +17,7 @@ async def fetch_and_check_summaries(start_timestamp: str):
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f"{WORK_LOG_BASE_URL}/summaries",
+                    GROUP_WORK_LOG_SUMMARIES_ENDPOINT,
                     params={"after_timestamp": last_timestamp}
                 )
                 response.raise_for_status()
