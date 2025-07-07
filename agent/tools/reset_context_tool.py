@@ -10,12 +10,7 @@ from tools.base_tool import ToolDefinition
 # ------------------------------------------------------------------
 ResetContextInputSchema = {
     "type": "object",
-    "properties": {
-        "context_file": {
-            "type": "string",
-            "description": "Optional path to the context file to delete. Defaults to 'conversation_context.pkl'"
-        }
-    }
+    "properties": {}
 }
 
 
@@ -28,8 +23,7 @@ def reset_context(input_data: dict) -> str:
     if isinstance(input_data, str):
         input_data = json.loads(input_data)
 
-    context_file = input_data.get("context_file", "conversation_context.pkl")
-
+    context_file = "conversation_context.pkl"
     file_path = Path(context_file)
 
     # Delete the context file if it exists
@@ -57,7 +51,7 @@ def reset_context(input_data: dict) -> str:
 # ------------------------------------------------------------------
 ResetContextDefinition = ToolDefinition(
     name="reset_context",
-    description="Reset the conversation context by deleting the saved context file and restarting the program",
+    description="Reset the conversation context by deleting the saved context file and restarting the program.",
     input_schema=ResetContextInputSchema,
     function=reset_context
 )

@@ -31,27 +31,27 @@ CommandLineInputSchema = {
     "properties": {
         "command": {
             "type": "string",
-            "description": "The shell command to execute (e.g., 'ls', 'echo', 'cat', etc.)"
+            "description": "The shell command to execute (e.g., 'ls', 'echo', 'cat', etc.)."
         },
         "args": {
             "type": "string",
-            "description": "Additional arguments for the command"
+            "description": "Additional arguments for the command."
         },
         "keep_alive": {
             "type": "boolean",
-            "description": "If true, keeps the process running and returns a process ID for later interaction"
+            "description": "If true, keeps the process running and returns a process ID for later interaction."
         },
         "process_action": {
             "type": "string",
-            "description": "Action to perform on a process ('list', 'status', 'output', 'input')",
+            "description": "Action to perform on a process ('list', 'status', 'output', 'input').",
         },
         "process_id": {
             "type": "integer",
-            "description": "Process ID for process operations (list, status, output, input). Required for process_action operations"
+            "description": "Process ID for process operations (list, status, output, input). Required for process_action operations."
         },
         "input_text": {
             "type": "string",
-            "description": "Text to send to a running process's stdin. You need to specify process_id and process_action=input",
+            "description": "Text to send to a running process's stdin. You need to specify process_id and process_action=input.",
         }
     },
     "required": []

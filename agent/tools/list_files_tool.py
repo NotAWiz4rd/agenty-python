@@ -12,7 +12,8 @@ ListFilesInputSchema = {
             "type": "string",
             "description": "Optional relative path to list files from. Defaults to current directory if not provided."
         }
-    }
+    },
+    "required": ["path"]
 }
 
 excluded_folders = {
