@@ -1,6 +1,6 @@
 import time
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input-schema for the wait tool

@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input schema for the task_tracker tool

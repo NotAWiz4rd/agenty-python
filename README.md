@@ -8,7 +8,6 @@ An extension to support multiple agents working together is currently under way 
 To start an agent in multi-agent mode, set TEAM_MODE in base_agent.py to true.
 Team mode is still in development.
 
-
 ## Features
 
 - File operations (read, edit, delete)
@@ -28,9 +27,23 @@ To start the AI agent system:
 1. Ensure all dependencies are installed
 2. If using a group-work-repository, create a local directory, initialise it with `git init`, run the git command `git config receive.denyCurrentBranch updateInstead` to allow push and run the clone_repo.sh script to clone the repository. 
 You need also to change the USERNAME and PATH_TO_REPO variables in the script.
-2. Provide an Anthropic API key in the `ANTHROPIC_API_KEY` environment variable
-3. Run the main program file `base_agent.py`
-4. Begin interacting with the agent through the provided interface
+3. Provide an Anthropic API key in the `ANTHROPIC_API_KEY` environment variable
+4. Run the main program file `agent/main.py`
+5. Begin interacting with the agent through the provided interface
+
+### Using Docker
+
+You can also run the agent team using Docker. Only configuration steps needed are:
+
+- The `ANTHROPIC_API_KEY` environment variable, also possible to be defined in an `.env` file next to the `docker-compose.yaml`.
+- The `team-config.json` file, which should be adapted to your needs (provide a task and a team of agents).
+
+Then you can use the agent team using the following scripts:
+
+- `scripts/deploy_agent_team.sh`: Deploys the agent team using Docker Compose.
+- `scripts/pause_agent_team.sh`: Pauses the agent team's work (by stopping their containers).
+- `scripts/resume_agent_team.sh`: Resumes the agent team's work (by starting their containers again).
+- `scripts/undeploy_agent_team.sh`: Undeploys the agent team and cleans up Docker resources.
 
 ## Available Tools
 
@@ -48,6 +61,7 @@ The agent comes with several built-in tools:
 - `calculator`: Perform basic arithmetic operations
 
 ## Multiple Agents - Target Architecture (Experimental)
+
 ![multi-agent-framework.jpeg](multi-agent-framework.jpeg)
 
 ## Safety Mechanisms

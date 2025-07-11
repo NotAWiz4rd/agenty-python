@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from agent.tools import (
+from tools import (
     SendGroupMessageDefinition,
     SendAgentMessageDefinition,
     CommandLineToolDefinition,
@@ -20,7 +20,7 @@ from agent.tools import (
     TaskTrackerDefinition,
     WaitDefinition,
 )
-from agent.util import save_conv_and_restart
+from util import save_conv_and_restart
 
 
 def get_tool_list(is_team_mode: bool) -> list:

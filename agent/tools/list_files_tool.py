@@ -1,6 +1,6 @@
 # list_files_tool.py
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the list_files tool

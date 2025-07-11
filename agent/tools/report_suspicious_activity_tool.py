@@ -8,7 +8,7 @@ from pathlib import Path
 import requests
 from pydantic import BaseModel
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 
 class SuspiciousActivityReport(BaseModel):
@@ -20,6 +20,7 @@ class SuspiciousActivityReport(BaseModel):
 
 
 OVERSIGHT_API_BASE_URL = os.getenv("OVERSIGHT_API_BASE_URL") or "http://127.0.0.1:8083"
+OVERSIGHT_REPORT_ACTIVITY_ENDPOINT = OVERSIGHT_API_BASE_URL + "/oversight/report-activity"
 
 # ------------------------------------------------------------------
 # Input schema for the report_suspicious_activity tool
@@ -71,8 +72,6 @@ def report_suspicious_activity(input_data: dict) -> str:
                                               involved_parties=involved_parties,
                                               report_id=f"SUSP_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
-    oversight_api_url = f"{OVERSIGHT_API_BASE_URL}/oversight/report-activity"
-
     try:
         # Log the report locally for audit trail
         log_entry = {
@@ -92,7 +91,7 @@ def report_suspicious_activity(input_data: dict) -> str:
             log_file.write(json.dumps(log_entry) + "\n")
 
         response = requests.post(
-            oversight_api_url,
+            OVERSIGHT_REPORT_ACTIVITY_ENDPOINT,
             json=report_payload.model_dump(),
             timeout=30
         )

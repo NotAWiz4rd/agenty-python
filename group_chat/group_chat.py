@@ -1,3 +1,4 @@
+import os
 import threading
 from datetime import datetime
 from typing import List
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 app = FastAPI()
 MSG_FILE = "chat_messages.txt"
 INITIAL_MESSAGE = "Welcome to the group chat! Feel free to introduce yourself or do whatever until your team is given a task. Once you are given a task, please make sure to work within the work_repo, committing, pushing and pulling regularly, so that you can actually work together as a team."
-#RPG_GAME_INITIAL_MESSAGE = "Welcome to the group chat! Your task is written in the task/rpg-game.md file. Commit and push (and pull) within the work_repo, otherwise your team won't be able to see any changes you make. Remember to work together in the work_repo and commit your changes regularly to avoid merge conflicts!"
+# RPG_GAME_INITIAL_MESSAGE = "Welcome to the group chat! Your task is written in the task/rpg-game.md file. Commit and push (and pull) within the work_repo, otherwise your team won't be able to see any changes you make. Remember to work together in the work_repo and commit your changes regularly to avoid merge conflicts!"
 lock = threading.Lock()  # For thread-safe writes
 
 
@@ -38,8 +39,11 @@ def load_messages():
     except FileNotFoundError:
         # File doesn't exist yet, which is fine
         # Add an initial message from the "supervisor"
-        initial_message = StoredMessage(username="supervisor", timestamp=datetime.utcnow().isoformat(),
-                                        message=INITIAL_MESSAGE)
+        initial_message = StoredMessage(
+            username="supervisor",
+            timestamp=datetime.utcnow().isoformat(),
+            message=os.getenv("INITIAL_GROUP_CHAT_MESSAGE", INITIAL_MESSAGE),
+        )
         messages.append(initial_message)
         with open(MSG_FILE, "a", encoding="utf-8") as f:
             f.write(f"{initial_message.username}||{initial_message.timestamp}||{initial_message.message}\n")

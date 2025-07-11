@@ -7,7 +7,7 @@ import subprocess
 import threading
 import time
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Global process storage for persistent processes
