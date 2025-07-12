@@ -5,10 +5,13 @@ import sys
 
 import requests
 
-from agent.llm import run_inference
+from llm import run_inference
 
-GROUP_CHAT_API = "http://127.0.0.1:5000/messages"
-GROUP_WORK_LOG_URL = "http://127.0.0.1:8082/summaries"
+GROUP_CHAT_API_URL = os.getenv("GROUP_CHAT_API_URL") or "http://127.0.0.1:5000"
+GROUP_CHAT_MESSAGES_ENDPOINT = GROUP_CHAT_API_URL + "/messages"
+
+WORK_LOG_BASE_URL = os.getenv("WORK_LOG_BASE_URL") or "http://127.0.0.1:8082"
+GROUP_WORK_LOG_SUMMARIES_ENDPOINT = WORK_LOG_BASE_URL + "/summaries"
 LAST_SUMMARY_TIMESTAMP = None
 
 
@@ -92,7 +95,7 @@ def get_new_messages_from_group_chat(current_messages: list) -> list:
     """Get messages from the group chat"""
     try:
         # Get messages from the API endpoint
-        response = requests.get(GROUP_CHAT_API)
+        response = requests.get(GROUP_CHAT_MESSAGES_ENDPOINT)
         if response.status_code != 200:
             print(f"\033[91mFailed to fetch messages: {response.status_code}\033[0m")
             return []
@@ -118,7 +121,7 @@ def get_new_summaries():
     global LAST_SUMMARY_TIMESTAMP
     try:
         # Get summaries from the API endpoint
-        response = requests.get(GROUP_WORK_LOG_URL, params={"after_timestamp": LAST_SUMMARY_TIMESTAMP})
+        response = requests.get(GROUP_WORK_LOG_SUMMARIES_ENDPOINT, params={"after_timestamp": LAST_SUMMARY_TIMESTAMP})
         summaries = response.json()
         if summaries:
             print(f"\033[96mFound {len(summaries)} new summaries\033[0m")

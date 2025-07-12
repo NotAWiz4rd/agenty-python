@@ -1,0 +1,46 @@
+name: agents
+
+services:
+  agent:
+    build:
+      dockerfile: docker/agent.Dockerfile
+    depends_on:
+      - group_chat
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GROUP_CHAT_API_URL: http://group_chat:8000
+      OVERSIGHT_API_BASE_URL: http://oversight_officer:8000
+      WORK_LOG_BASE_URL: http://group_work_log:8000
+    volumes:
+      - ./team-config.json:/app/team-config.json:ro
+      - agents_git_remote:/remote:rw
+
+  group_chat:
+    build:
+      dockerfile: docker/group_chat.Dockerfile
+    container_name: group_chat
+    environment:
+      INITIAL_GROUP_CHAT_MESSAGE: ${INITIAL_GROUP_CHAT_MESSAGE}
+    ports:
+      - "5000:8000"
+
+  group_work_log:
+    build:
+      dockerfile: docker/group_work_log.Dockerfile
+    container_name: group_work_log
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    profiles: [ group_work_log ]
+
+  oversight_officer:
+    build:
+      dockerfile: docker/oversight_officer.Dockerfile
+    container_name: oversight_officer
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      WORK_LOG_BASE_URL: http://group_work_log:8000
+    profiles: [ oversight_officer ]
+
+volumes:
+  agents_git_remote:
+    external: true

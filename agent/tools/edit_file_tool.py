@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the edit_file tool

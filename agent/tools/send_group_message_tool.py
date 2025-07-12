@@ -1,10 +1,11 @@
 # send_group_message_tool.py
 
 import json
+import os
 
 import requests
 
-from agent.tools.base_tool import ToolDefinition
+from tools.base_tool import ToolDefinition
 
 # ------------------------------------------------------------------
 # Input‐schema for the send_group_message tool
@@ -24,7 +25,8 @@ SendGroupMessageInputSchema = {
     "required": ["from_agent", "message"]
 }
 
-GROUP_CHAT_API_URL = "http://127.0.0.1:5000/send"
+GROUP_CHAT_API_URL = os.getenv("GROUP_CHAT_API_URL") or "http://127.0.0.1:5000"
+GROUP_CHAT_SEND_ENDPOINT = GROUP_CHAT_API_URL + "/send"
 
 
 def send_group_message(input_data: dict) -> str:
@@ -43,7 +45,7 @@ def send_group_message(input_data: dict) -> str:
 
     payload = {"username": username, "message": message}
     try:
-        response = requests.post(GROUP_CHAT_API_URL, json=payload, timeout=5)
+        response = requests.post(GROUP_CHAT_SEND_ENDPOINT, json=payload, timeout=5)
         response.raise_for_status()
         return f"Message sent as '{username}': {message}"
     except requests.RequestException as e:

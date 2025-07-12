@@ -1,24 +1,33 @@
-# Register cleanup function to run on exit
+import argparse
 import atexit
 import sys
 
 import anthropic
 
-from agent.api import start_api
-from agent.base_agent import Agent
-from agent.context_handling import (cleanup_context)
-from agent.team_config_loader import get_team_config, get_current_agent_name
-from agent.util import log_error, get_agent_turn_delay_in_ms
+from api import start_api
+from base_agent import Agent
+from context_handling import (cleanup_context)
+from team_config_loader import get_current_agent_name, initialize_team_config
+from util import log_error, get_agent_turn_delay_in_ms
+
+parser = argparse.ArgumentParser(description="Agent")
+parser.add_argument("--docker_mode", type=bool, default=False, help="Run in Docker mode")
+parser.add_argument("--docker_agent_index", type=int, help="Agent index in Docker mode (0-based)")
+parser.add_argument("--docker_host_base", type=str, help="Base host for Docker mode (e.g., 'container_base_name')")
 
 
 def main():
+    args = parser.parse_args()
+    print(f"Starting agent with arguments: {args}")
+
     anthropic_client = anthropic.Anthropic()  # expects ANTHROPIC_API_KEY in env
 
-    team_config = get_team_config()
+    team_config = initialize_team_config(args.docker_mode, args.docker_agent_index, args.docker_host_base)
     # Set team mode to True only if multiple agents are defined in the configuration
     team_mode = False if not team_config or len(team_config.agents) <= 1 else True
     number_of_agents = len(team_config.agents) if team_mode else 1
 
+    # Register cleanup function to run on exit
     atexit.register(cleanup_context)
 
     try:
