@@ -135,7 +135,7 @@ class Agent:
                 # Check for new group messages at each cycle
                 self.check_group_messages()
                 # Check for new summaries at each cycle
-                self.check_new_summaries()
+                # self.check_new_summaries()
 
             tool_count_object = [self.consecutive_tool_count]
             message = get_new_message(self.is_team_mode, tool_count_object, self.read_user_input)
@@ -197,10 +197,10 @@ class Agent:
                 self.read_user_input = not self.is_team_mode
 
             # Count a step
-            self.steps_since_last_log += 1
+            # self.steps_since_last_log += 1
 
             # Check if a work log should be sent
-            self.check_and_send_work_log(conversation)
+            # self.check_and_send_work_log(conversation)
 
             # Check if we need to restart due to token limit
             if token_usage >= self.token_limit:

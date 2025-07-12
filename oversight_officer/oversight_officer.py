@@ -37,3 +37,6 @@ async def startup_event():
     # Get the current timestamp in ISO format without timezone offset to fetch summaries after this time
     now = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "")
     asyncio.create_task(fetch_and_check_summaries(start_timestamp=now))
+
+if __name__ == "__main__":
+    main()
