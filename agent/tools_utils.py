@@ -58,7 +58,7 @@ def get_tools_param(is_team_mode: bool) -> list:
             "input_schema": t.input_schema
         })
 
-    # Add Anthropic Web Search tool if it is available
+    # Add Anthropic Web Search tool
     tools_param.append({
         "type": "web_search_20250305",
         "name": "web_search",
