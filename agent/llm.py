@@ -1,4 +1,5 @@
 import json
+import anthropic
 
 
 def get_system_prompt(agent_name: str, is_team_mode: bool = False) -> str:
@@ -44,6 +45,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count = 0, a
     :param max_consecutive_tools:
     :return: The LLM response and the total token usage (excluding cached tokens!).
     """
+    global response
     from agent.tools_utils import get_tools_param
     tools_param = get_tools_param(is_team_mode)
 
@@ -63,15 +65,33 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count = 0, a
             # We'll reset the counter when ask_human is actually executed
 
     conversation = remove_all_but_last_three_cache_controls(conversation)
+    success = False
+    max_attempts = 5
+    llm_requests = 1
+    while not success and llm_requests <= max_attempts:
+        try:
+            response = llm_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=9999,
+                system=get_system_prompt(agent_name, is_team_mode), # Pass system prompt as a top-level parameter
+                messages=conversation,
+                tool_choice=tool_choice,
+                tools=tools_param
+            )
+            success = True
+        except anthropic.APIStatusError as e:
+            if e.status_code == 529:
+                print(f"\033[93mRequest {llm_requests}: Overloaded Error. Trying again...\033[0m")
+            elif e.status_code == 429:
+                print(f"\033[93mRequest {llm_requests}: Rate Limit Error. Trying again...\033[0m")
+            elif e.status_code == 500:
+                print(f"\033[91mRequest {llm_requests}: API Internal Server Error. Trying again...\033[0m")
+            else:
+                print(f"\033[91mRequest {llm_requests}: Error during LLM inference: {e.status_code}\033[0m")
+            llm_requests += 1
 
-    response = llm_client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=9999,
-        system=get_system_prompt(agent_name, is_team_mode),  # Pass system prompt as a top-level parameter
-        messages=conversation,
-        tool_choice=tool_choice,
-        tools=tools_param
-    )
+    if not success:
+        raise RuntimeError(f"LLM request failed after {max_attempts} attempts.")
 
     if not response:
         raise ValueError("LLM response is empty. Please check your LLM client configuration.")
