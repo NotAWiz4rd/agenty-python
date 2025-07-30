@@ -158,8 +158,7 @@ class Agent:
                     print_text += block.text
                 elif block.type in  ["tool_use", "server_tool_use"]:
                     if print_text:
-                        print_text.rstrip()
-                        print(f"\033[93m{self.name}\033[0m: {print_text}", flush=True)
+                        print(f"\033[93m{self.name}\033[0m: {print_text.rstrip()}", flush=True)
                         print_text = ""
                     # If the tool is ask_human, reset counter before executing
                     if block.name == "ask_human":
