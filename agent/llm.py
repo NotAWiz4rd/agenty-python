@@ -1,4 +1,7 @@
 import json
+import time
+from typing import Any
+
 import anthropic
 
 
@@ -45,7 +48,7 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count = 0, a
     :param max_consecutive_tools:
     :return: The LLM response and the total token usage (excluding cached tokens!).
     """
-    global response
+    response: Any = None
     from agent.tools_utils import get_tools_param
     tools_param = get_tools_param(is_team_mode)
 
@@ -67,8 +70,8 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count = 0, a
     conversation = remove_all_but_last_three_cache_controls(conversation)
     success = False
     max_attempts = 5
-    llm_requests = 1
-    while not success and llm_requests <= max_attempts:
+    llm_requests = 0
+    while not success and llm_requests < max_attempts:
         try:
             response = llm_client.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -82,13 +85,17 @@ def run_inference(conversation, llm_client, tools, consecutive_tool_count = 0, a
         except anthropic.APIStatusError as e:
             if e.status_code == 529:
                 print(f"\033[93mRequest {llm_requests}: Overloaded Error. Trying again...\033[0m")
+                llm_requests += 1
             elif e.status_code == 429:
                 print(f"\033[93mRequest {llm_requests}: Rate Limit Error. Trying again...\033[0m")
+                llm_requests += 1
             elif e.status_code == 500:
                 print(f"\033[91mRequest {llm_requests}: API Internal Server Error. Trying again...\033[0m")
+                llm_requests += 1
             else:
                 print(f"\033[91mRequest {llm_requests}: Error during LLM inference: {e.status_code}\033[0m")
-            llm_requests += 1
+                raise Exception(f"LLM inference failed with status code {e.status_code}: {e.message}")
+            time.sleep(3) # wait for 3 seconds before retrying
 
     if not success:
         raise RuntimeError(f"LLM request failed after {max_attempts} attempts.")
