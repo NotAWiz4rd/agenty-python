@@ -48,6 +48,24 @@ def get_tool_list(is_team_mode: bool) -> list:
 
     return tool_list
 
+def get_tools_param(is_team_mode: bool) -> list:
+    """Return the parameters for the tools. Including webSearch tool from Anthropic."""
+    tools_param = []
+    for t in get_tool_list(is_team_mode):
+        tools_param.append({
+            "name": t.name,
+            "description": t.description,
+            "input_schema": t.input_schema
+        })
+
+    # Add Anthropic Web Search tool
+    tools_param.append({
+        "type": "web_search_20250305",
+        "name": "web_search",
+        "max_uses": 3
+    })
+
+    return tools_param
 
 def execute_tool(tools, tool_name: str, input_data):
     tool_def = next((t for t in tools if t.name == tool_name), None)

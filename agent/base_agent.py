@@ -148,12 +148,18 @@ class Agent:
                                                           self.name, self.is_team_mode,
                                                           self.max_consecutive_tools)
             tool_results = []
-
+            print_text = ""
             # print assistant text and collect any tool calls
             for block in response_content:
+                if block.type not in ["text", "tool_use", "server_tool_use", "web_search_tool_result"]:
+                    print(f"\033[91mUnknown block type: {block.type}\033[0m")
+                    continue
                 if block.type == "text":
-                    print(f"\033[93m{self.name}\033[0m: {block.text}")
-                elif block.type == "tool_use":
+                    print_text += block.text
+                elif block.type in  ["tool_use", "server_tool_use"]:
+                    if print_text:
+                        print(f"\033[93m{self.name}\033[0m: {print_text.rstrip()}", flush=True)
+                        print_text = ""
                     # If the tool is ask_human, reset counter before executing
                     if block.name == "ask_human":
                         self.consecutive_tool_count = 0
@@ -161,33 +167,62 @@ class Agent:
                         self.consecutive_tool_count += 1
                         print(
                             f"\033[96mConsecutive tool count: {self.consecutive_tool_count}/{self.max_consecutive_tools}\033[0m")
+                    if block.type == "tool_use":
+                        result = execute_tool(self.tools, block.name, block.input)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": result
+                        })
 
-                    result = execute_tool(self.tools, block.name, block.input)
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": result
-                    })
+            if print_text:
+                print_text.rstrip()
+                print(f"\033[93m{self.name}\033[0m: {print_text}", flush=True)
 
             # 2) First, append the assistant's own message (including its tool_use blocks!)
-            conversation.append({
-                "role": "assistant",
-                "content": [
-                    # for each block LLM returned, mirror it exactly
-                    {
-                        "type": b.type,
-                        **({
-                               "text": b.text
-                           } if b.type == "text" else {
+            for b in response_content:
+                if b.type in ["text", "tool_use"]:
+                    conversation.append({
+                        "role": "assistant",
+                        "content": [
+                            # for each block LLM returned, mirror it exactly
+                            {
+                                "type": b.type,
+                                **({
+                                       "text": b.text
+                                   } if b.type == "text" else {
+                                    "id": b.id,
+                                    "name": b.name,
+                                    "input": b.input
+                                }),
+                                "cache_control": {"type": "ephemeral"}
+                            }
+                        ]
+                    })
+                elif b.type == "server_tool_use":
+                    conversation.append({
+                        "role": "assistant",
+                        "content": [{
+                            "type": "tool_use",
                             "id": b.id,
                             "name": b.name,
-                            "input": b.input
-                        }),
-                        "cache_control": {"type": "ephemeral"}
-                    }
-                    for b in response_content
-                ]
-            })
+                            "input": b.input,
+                            "cache_control": {"type": "ephemeral"}
+                        }]
+                    })
+                # 3) When we use a web search we need to add the tool results as a user message manually
+                elif b.type == "web_search_tool_result":
+                    result = ", ".join(str(r) for r in b.content)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": b.tool_use_id,
+                        "content": "[Server Tool Use] " + result + " executed successfully."
+                    })
+                    conversation.append({
+                        "role": "user",
+                        "content": tool_results
+                    })
+                    tool_results = []  # reset tool results after appending
 
             # 3) If there were any tool calls, follow up with tool_results as a user turn
             if tool_results:
