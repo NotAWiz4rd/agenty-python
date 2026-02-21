@@ -12,6 +12,10 @@ INITIAL_MESSAGE = "Welcome to the group chat! Feel free to introduce yourself or
 # RPG_GAME_INITIAL_MESSAGE = "Welcome to the group chat! Your task is written in the task/rpg-game.md file. Commit and push (and pull) within the work_repo, otherwise your team won't be able to see any changes you make. Remember to work together in the work_repo and commit your changes regularly to avoid merge conflicts!"
 lock = threading.Lock()  # For thread-safe writes
 
+# Service start time for monitoring
+service_start_time = datetime.now()
+message_count = 0
+
 
 class Message(BaseModel):
     username: str
@@ -22,6 +26,13 @@ class StoredMessage(BaseModel):
     username: str
     timestamp: str
     message: str
+
+
+class HealthResponse(BaseModel):
+    status: str
+    uptime_seconds: float
+    total_messages: int
+    timestamp: str
 
 
 # In-memory store
@@ -53,8 +64,38 @@ def load_messages():
 load_messages()
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    uptime = (datetime.now() - service_start_time).total_seconds()
+    return HealthResponse(
+        status="healthy",
+        uptime_seconds=uptime,
+        total_messages=len(messages),
+        timestamp=datetime.now().isoformat()
+    )
+
+
+@app.get("/status")
+async def service_status():
+    """Detailed service status"""
+    uptime = (datetime.now() - service_start_time).total_seconds()
+    return {
+        "service_name": "group_chat",
+        "status": "running",
+        "uptime_seconds": uptime,
+        "total_messages": len(messages),
+        "active_users": len(set(msg.username for msg in messages)),
+        "start_time": service_start_time.isoformat(),
+        "current_time": datetime.now().isoformat()
+    }
+
+
 @app.post("/send")
 async def send_message(msg: Message):
+    global message_count
+    message_count += 1
+
     now = datetime.utcnow().isoformat()
     stored = StoredMessage(username=msg.username, timestamp=now, message=msg.message)
     with lock:
