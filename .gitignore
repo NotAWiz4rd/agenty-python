@@ -1,1 +1,22 @@
+# Environment
 .env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Project runtime files
+conversation_context.pkl
+error.txt
+group_chat/chat_messages.txt
