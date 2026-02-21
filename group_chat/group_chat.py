@@ -1,6 +1,6 @@
 import os
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import FastAPI
@@ -52,7 +52,7 @@ def load_messages():
         # Add an initial message from the "supervisor"
         initial_message = StoredMessage(
             username="supervisor",
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             message=os.getenv("INITIAL_GROUP_CHAT_MESSAGE", INITIAL_MESSAGE),
         )
         messages.append(initial_message)
@@ -96,7 +96,7 @@ async def send_message(msg: Message):
     global message_count
     message_count += 1
 
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     stored = StoredMessage(username=msg.username, timestamp=now, message=msg.message)
     with lock:
         print(f"Received message by {msg.username}: {msg.message}")

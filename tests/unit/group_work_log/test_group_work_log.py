@@ -107,10 +107,10 @@ class TestGetSummaries:
     def test_after_timestamp_filters_older_entries(self, client):
         client.post("/submit-worklog", json=_WORKLOG_PAYLOAD)
         import time
-        from datetime import datetime
+        from datetime import datetime, timezone
         time.sleep(0.01)
         # Always include microseconds to satisfy server-side strptime validation
-        cutoff = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")
+        cutoff = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")
         time.sleep(0.01)
         client.post("/submit-worklog", json={**_WORKLOG_PAYLOAD, "agent_name": "AgentB"})
         r = client.get(f"/summaries?after_timestamp={cutoff}")

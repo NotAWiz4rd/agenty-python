@@ -1,6 +1,6 @@
 import threading
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 from typing import List, Optional, Dict, Any
 
@@ -80,7 +80,7 @@ def read_previous_summaries():
                     if len(timespan_parts) >= 2:
                         current_timestamp = timespan_parts[1].strip()
                     else:
-                        current_timestamp = datetime.utcnow().isoformat()
+                        current_timestamp = datetime.now(timezone.utc).isoformat()
 
                 else:
                     # Continue building the current summary
@@ -189,7 +189,7 @@ async def submit_worklog(request: WorklogRequest):
     if not messages:
         raise HTTPException(status_code=400, detail="Empty messages provided")
 
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     response = {"status": "ok"}
 
     with lock:

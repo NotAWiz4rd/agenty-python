@@ -57,7 +57,7 @@ class Agent:
         self.max_consecutive_tools = 20
         self.group_chat_messages = []
         self.last_logged_index = 0  # Last index of the group chat messages that were logged
-        self.last_log_time = datetime.datetime.utcnow().isoformat()  # Last time a log was sent
+        self.last_log_time = datetime.datetime.now(datetime.timezone.utc).isoformat()  # Last time a log was sent
         self.turn_delay = turn_delay
 
         self.name = agent_name
@@ -74,7 +74,7 @@ class Agent:
             # Check if there are new messages since the last log
             new_messages = conversation[self.last_logged_index:]
             first_timestamp = self.last_log_time
-            last_timestamp = datetime.datetime.utcnow().isoformat()
+            last_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
             success = send_work_log(self.name, new_messages, first_timestamp, last_timestamp)
             if success:
                 self.steps_since_last_log = 0
