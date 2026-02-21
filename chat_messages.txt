@@ -1,0 +1,1 @@
+supervisor||2026-02-21T21:07:01.625886||Welcome to the group chat! Feel free to introduce yourself or do whatever until your team is given a task. Once you are given a task, please make sure to work within the work_repo, committing, pushing and pulling regularly, so that you can actually work together as a team.

@@ -1,4 +1,5 @@
 import threading
+from contextlib import asynccontextmanager
 from datetime import datetime
 import os
 from typing import List, Optional, Dict, Any
@@ -9,7 +10,18 @@ from anthropic.types import MessageParam
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    read_previous_summaries()
+    if os.path.exists(SUMMARY_FILE):
+        os.remove(SUMMARY_FILE)
+    yield
+    global summaries
+    summaries.clear()
+
+
+app = FastAPI(lifespan=lifespan)
 SUMMARY_FILE = "agent_work_summaries.txt"
 lock = threading.Lock()  # For thread-safe write operations
 claude_client = anthropic.Anthropic() # Anthropic client for summaries
@@ -217,13 +229,3 @@ async def get_summaries(after_timestamp: Optional[str] = None):
             raise HTTPException(status_code=400, detail="Invalid timestamp format. Expected ISO 8601 format.")
     return summaries
 
-@app.on_event("startup")
-def startup_event():
-    read_previous_summaries()
-    if os.path.exists(SUMMARY_FILE):
-        os.remove(SUMMARY_FILE)
-
-@app.on_event("shutdown")
-def cleanup_summaries():
-    global summaries
-    summaries.clear()
